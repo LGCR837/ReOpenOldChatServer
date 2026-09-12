@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>旧聊 - 轻量级复古聊天应用</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@100;300;400;600&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              metro: {
+                bg: '#000000',
+                accent: '#0050ef', // Cobalt Blue
+                accentHover: '#003da6',
+                text: '#ffffff',
+                secondary: '#1f1f1f',
+              }
+            },
+            fontFamily: {
+              sans: ['"Segoe UI"', 'sans-serif'],
+            },
+            animation: {
+              'tile-flip': 'flip Vertical 1s ease-in-out',
+              'page-enter': 'pageIn 0.5s ease-out forwards',
+            },
+            keyframes: {
+              flip: {
+                '0%': { transform: 'rotateX(0deg)' },
+                '100%': { transform: 'rotateX(180deg)' },
+              },
+              pageIn: {
+                '0%': { opacity: '0', transform: 'translateY(20px) rotateX(10deg)' },
+                '100%': { opacity: '1', transform: 'translateY(0) rotateX(0)' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #000000;
+        color: white;
+        overflow-x: hidden;
+      }
+      /* Custom scrollbar to match Metro aesthetics */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #000;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #444;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #0050ef;
+      }
+      
+      .perspective-1000 {
+        perspective: 1000px;
+      }
+      .transform-style-3d {
+        transform-style: preserve-3d;
+      }
+      .backface-hidden {
+        backface-visibility: hidden;
+      }
+      .rotate-x-180 {
+        transform: rotateX(180deg);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

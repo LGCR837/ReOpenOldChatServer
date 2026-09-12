@@ -1,0 +1,12 @@
+{
+  "name": "旧聊",
+  "subtitle": "轻量级聊天应用，专为老设备优化。",
+  "download_url": "/update/",
+  "report_url": "/report",
+  "logo": "/landing-assets/oldchat_logo.png",
+  "cta": {
+    "download": "下载应用",
+    "report": "问题反馈"
+  },
+  "footer": "旧聊（OldChat）致力于为旧设备提供现代化的通讯体验。更新说明来自 update.json。"
+}
