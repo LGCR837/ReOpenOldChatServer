@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -10,6 +12,35 @@ func (api *API) registerV2Routes(r chi.Router) {
 	r.Use(api.v2SignMiddleware)
 
 	r.Post("/gateway", api.handleV2Gateway)
+
+	// ---- 认证（无需 token，与 v1 同名同义）----
+	r.Post("/auth/register", api.handleRegister)
+	r.Post("/auth/login", api.handleLogin)
+	r.Post("/auth/logout", api.handleLogout)
+	r.Post("/auth/refresh", api.handleRefresh)
+	r.Post("/auth/handshake", api.handleHandshake)
+	r.Get("/auth/captcha", api.handleCaptcha)
+	r.Post("/auth/email/send", api.handleEmailCode)
+	r.Post("/auth/password/reset", api.handleResetPassword)
+	r.Post("/auth/direct-create", api.handleDirectCreateUser)
+
+	// ---- 音乐封面代理（v1 路径 /v1/music/cover/*，此处同步暴露）----
+	r.Get("/music/cover/*", api.handleMusicCoverProxy)
+
+	// 刻意不暴露 /v2/ws：客户端 SDK 固定连 /v1/ws（见 oldchat-ws-extension.js），
+	// 且 WS 握手无法携带逐帧 X-Sign，走 v2SignMiddleware 必然 401。
+
+	// v2 下的静态媒体，与 v1/uploads 同源
+	v2UploadsHandler := withStaticMediaCache(http.StripPrefix("/v2/uploads/", http.FileServer(http.Dir(api.cfg.UploadDir))))
+	r.Handle("/uploads/*", withMediaDownloadLimit(func() bool { return api.cfg.VideoEnabled }, v2UploadsHandler))
+
+	// ---- 第三方对接（自带 external 鉴权，不走 Bearer）----
+	r.Post("/external/groups", api.handleExternalGroupList)
+	r.Post("/external/friends", api.handleExternalFriendList)
+	r.Post("/external/direct/send", api.handleExternalDirectSend)
+	r.Post("/external/group/send", api.handleExternalGroupSend)
+	r.Post("/external/coin/pay", api.handleExternalCoinPay)
+	r.Post("/external/coin/verify", api.handleExternalCoinVerify)
 
 	r.Group(func(r chi.Router) {
 		r.Use(api.authMiddleware)
@@ -102,5 +133,57 @@ func (api *API) registerV2Routes(r chi.Router) {
 		// ---- 输入状态 ----
 		r.Post("/chats/typing", api.handleChatTyping)
 		r.Get("/chats/{chatId}/typing", api.handleChatTypingStatus)
+
+		// ---- 以下为 v1 形态原样暴露，handler 无需改动（无协议差异）----
+
+		// v1 别名：客户端 v2 侧仍可能叫 /direct/unread、/groups/unread
+		r.Post("/direct/unread", api.handleDirectUnread)
+		r.Post("/groups/unread", api.handleGroupUnread)
+
+		// 收藏
+		r.Get("/favorites", api.handleFavoriteList)
+		r.Post("/favorites/add", api.handleFavoriteAdd)
+		r.Post("/favorites/remove", api.handleFavoriteRemove)
+
+		// 表情广场
+		r.Get("/emoji/plaza", api.handleEmojiPlazaList)
+		r.Get("/emoji/plaza/mine", api.handleEmojiPlazaMineList)
+		r.Post("/emoji/plaza/upload", api.handleEmojiPlazaUpload)
+		r.Post("/emoji/plaza/save", api.handleEmojiPlazaSave)
+		r.Post("/emoji/plaza/delete", api.handleEmojiPlazaDelete)
+
+		// 音乐广场
+		r.Get("/music/plaza", api.handleMusicPlazaList)
+		r.Get("/music/plaza/mine", api.handleMusicPlazaMineList)
+		r.Post("/music/plaza/upload", api.handleMusicPlazaUpload)
+		r.Post("/music/plaza/lyrics", api.handleMusicPlazaLyricsUpload)
+		r.Post("/music/plaza/delete", api.handleMusicPlazaDelete)
+		r.Post("/music/plaza/mine/delete-batch", api.handleMusicPlazaMineBatchDelete)
+		r.Post("/music/plaza/like", api.handleMusicPlazaLike)
+		r.Post("/music/plaza/unlike", api.handleMusicPlazaUnlike)
+		r.Post("/music/plaza/comment", api.handleMusicPlazaComment)
+		r.Post("/music/plaza/comment/delete", api.handleMusicPlazaCommentDelete)
+		r.Get("/music/plaza/comments", api.handleMusicPlazaComments)
+		r.Post("/music/plaza/play", api.handleMusicPlazaPlay)
+		r.Get("/music/plaza/ranking", api.handleMusicPlazaRanking)
+
+		// 举报
+		r.Get("/reports/bug", api.handleAllBugReports)
+		r.Get("/reports/user", api.handleAllUserReports)
+		r.Get("/reports/group", api.handleAllGroupReports)
+		r.Post("/reports/user", api.handleUserReport)
+		r.Post("/reports/group", api.handleGroupReport)
+		r.Post("/feedback", api.handleSubmitBugReport)
+		r.Post("/admins/crash-reports", api.handleSubmitCrashReport)
+
+		// 公审台
+		r.Get("/public-court/cases", api.handlePublicCourtCases)
+		r.Get("/public-court/cases/{caseID}", api.handlePublicCourtCaseDetail)
+		r.Get("/public-court/cases/{caseID}/votes", api.handlePublicCourtCaseVotes)
+		r.Get("/public-court/cases/{caseID}/discussions", api.handlePublicCourtCaseDiscussions)
+		r.Post("/public-court/cases/{caseID}/vote", api.handlePublicCourtCaseVote)
+		r.Post("/public-court/cases/{caseID}/statement", api.handlePublicCourtCaseStatement)
+		r.Post("/public-court/cases/{caseID}/discussion", api.handlePublicCourtCaseDiscussion)
+		r.Post("/public-court/cases/{caseID}/withdraw", api.handlePublicCourtCaseWithdraw)
 	})
 }

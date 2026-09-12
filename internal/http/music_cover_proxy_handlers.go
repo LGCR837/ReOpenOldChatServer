@@ -36,7 +36,11 @@ func (a *API) musicCoverProxyURL(raw string) string {
 }
 
 func (a *API) handleMusicCoverProxy(w http.ResponseWriter, r *http.Request) {
-	name := strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/music/cover/"))
+	// v1 与 v2 前缀不同，取 chi 通配参数；兜底裸路径以兼容网关重放
+	name := strings.TrimSpace(chiURLParam(r, "*"))
+	if name == "" {
+		name = strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/music/cover/"))
+	}
 	if name == "" || strings.Contains(name, "..") || strings.Contains(name, "/") || strings.Contains(name, "\\") {
 		w.WriteHeader(http.StatusNotFound)
 		return
