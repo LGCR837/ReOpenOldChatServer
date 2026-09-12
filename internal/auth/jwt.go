@@ -23,10 +23,10 @@ func NewAccessToken(secret []byte, issuer string, ttl time.Duration, subject, ui
 		Username: username,
 		Version:  version,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:   issuer,
-			Subject:  subject,
-			IssuedAt: jwt.NewNumericDate(now),
-			ID:       jti,
+			Issuer:    issuer,
+			Subject:   subject,
+			IssuedAt:  jwt.NewNumericDate(now),
+			ID:        jti,
 		},
 	}
 	if ttl > 0 {
