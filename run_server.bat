@@ -13,7 +13,7 @@ if not defined REFRESH_TOKEN_TTL set "REFRESH_TOKEN_TTL=2592000"
 
 set "BIN_PATH="
 if defined BIN_NAME if exist "%SERVER_DIR%\%BIN_NAME%" set "BIN_PATH=%SERVER_DIR%\%BIN_NAME%"
-if not defined BIN_PATH if exist "%SERVER_DIR%\ocserver_windows_amd64.exe" set "BIN_PATH=%SERVER_DIR%\ocserver_windows_amd64.exe"
+if not defined BIN_PATH if exist "%SERVER_DIR%\reopenoldchatserver_windows_amd64.exe" set "BIN_PATH=%SERVER_DIR%\reopenoldchatserver_windows_amd64.exe"
 
 if not defined BIN_PATH (
   echo Server binary not found. Build it with: .\build.ps1

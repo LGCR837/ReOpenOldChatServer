@@ -41,3 +41,6 @@ uploads/
 # macOS 跨平台开发残留
 ._*
 .DS_Store
+
+# WorkBuddy 工作数据
+.workbuddy/

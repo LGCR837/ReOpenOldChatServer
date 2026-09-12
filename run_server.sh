@@ -20,8 +20,8 @@ else
     x86_64) ARCH=amd64 ;;
     arm64|aarch64) ARCH=arm64 ;;
   esac
-  if [ -x "$SERVER_DIR/ocserver_${OS}_${ARCH}" ]; then
-    BIN_PATH="$SERVER_DIR/ocserver_${OS}_${ARCH}"
+  if [ -x "$SERVER_DIR/reopenoldchatserver_${OS}_${ARCH}" ]; then
+    BIN_PATH="$SERVER_DIR/reopenoldchatserver_${OS}_${ARCH}"
   fi
 fi
 
