@@ -55,6 +55,7 @@ type resetPasswordRequest struct {
 type userResponse struct {
 	ID          string `json:"id"`
 	UID         string `json:"uid"`
+	NCUID       string `json:"ncuid"`
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
 	UserTitle   string `json:"user_title"`
@@ -66,6 +67,7 @@ type userResponse struct {
 type selfUserResponse struct {
 	ID              string `json:"id"`
 	UID             string `json:"uid"`
+	NCUID           string `json:"ncuid"`
 	Username        string `json:"username"`
 	DisplayName     string `json:"display_name"`
 	UserTitle       string `json:"user_title"`
@@ -182,6 +184,7 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 	user := &data.User{
 		ID:              id,
 		UID:             uid,
+		NCUID:           uid, // 初始 NCUID = 初始 UID，之后不再变
 		Email:           email,
 		Username:        username,
 		DisplayName:     username,
@@ -548,6 +551,7 @@ func toSelfUserResponse(u *data.User) selfUserResponse {
 	return selfUserResponse{
 		ID:              u.ID,
 		UID:             u.UID,
+		NCUID:           u.NCUID,
 		Username:        u.Username,
 		DisplayName:     u.DisplayName,
 		UserTitle:       u.UserTitle,

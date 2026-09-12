@@ -29,6 +29,7 @@ type groupListResponse struct {
 
 type groupMemberItem struct {
 	UID         string `json:"uid"`
+	NCUID       string `json:"ncuid"`
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
 	UserTitle   string `json:"user_title"`
@@ -60,6 +61,7 @@ type groupAvatarRequest struct {
 type groupJoinRequestItem struct {
 	RequestID   string `json:"request_id"`
 	UID         string `json:"uid"`
+	NCUID       string `json:"ncuid"`
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
 	UserTitle   string `json:"user_title"`

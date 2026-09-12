@@ -59,10 +59,10 @@ func (s *UserStore) Create(ctx context.Context, u *User) error {
 	}
 	const q = `
 INSERT INTO users (
-	id, uid, uid_changed_at, email, username, display_name, user_title, user_title_price,
+	id, uid, ncuid, uid_changed_at, email, username, display_name, user_title, user_title_price,
 	avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score
 ) VALUES (
-	:id, :uid, CURRENT_TIMESTAMP, :email, :username, :display_name, :user_title, :user_title_price,
+	:id, :uid, :ncuid, CURRENT_TIMESTAMP, :email, :username, :display_name, :user_title, :user_title_price,
 	:avatar_url, :signature, :cover_url, :password_hash, :token_version, :coin_balance, :reputation_score
 )`
 
@@ -72,7 +72,7 @@ INSERT INTO users (
 
 func (s *UserStore) GetByEmailOrUsername(ctx context.Context, identifier string) (*User, error) {
 	const q = `
-SELECT id, uid, uid_changed_at, email, username, display_name, user_title, user_title_price, avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score, created_at, updated_at
+SELECT id, uid, ncuid, uid_changed_at, email, username, display_name, user_title, user_title_price, avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score, created_at, updated_at
 FROM users
 WHERE email = $1 OR username = $1
 LIMIT 1`
@@ -90,7 +90,7 @@ LIMIT 1`
 
 func (s *UserStore) GetByID(ctx context.Context, id string) (*User, error) {
 	const q = `
-SELECT id, uid, uid_changed_at, email, username, display_name, user_title, user_title_price, avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score, created_at, updated_at
+SELECT id, uid, ncuid, uid_changed_at, email, username, display_name, user_title, user_title_price, avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score, created_at, updated_at
 FROM users
 WHERE id = $1
 LIMIT 1`
@@ -108,7 +108,7 @@ LIMIT 1`
 
 func (s *UserStore) GetByUID(ctx context.Context, uid string) (*User, error) {
 	const q = `
-SELECT id, uid, uid_changed_at, email, username, display_name, user_title, user_title_price, avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score, created_at, updated_at
+SELECT id, uid, ncuid, uid_changed_at, email, username, display_name, user_title, user_title_price, avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score, created_at, updated_at
 FROM users
 WHERE uid = $1
 LIMIT 1`

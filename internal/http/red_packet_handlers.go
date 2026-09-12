@@ -64,6 +64,7 @@ type redPacketDetailResponse struct {
 
 type redPacketClaimItem struct {
 	UID         string `json:"uid"`
+	NCUID       string `json:"ncuid"`
 	DisplayName string `json:"display_name"`
 	Amount      int    `json:"amount"`
 	CreatedAt   int64  `json:"created_at"`

@@ -4,6 +4,8 @@
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(32) PRIMARY KEY,
     uid VARCHAR(32) NOT NULL UNIQUE,
+    -- 注册时与 uid 同值，此后永不变更；uid 可被用户改掉
+    ncuid VARCHAR(32) NOT NULL DEFAULT '',
     uid_changed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     email VARCHAR(255) NOT NULL DEFAULT '',
     username VARCHAR(64) NOT NULL UNIQUE,
@@ -23,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
+CREATE INDEX IF NOT EXISTS idx_users_ncuid ON users (ncuid);
 CREATE INDEX IF NOT EXISTS idx_users_created ON users (created_at);
 
 -- Direct threads table

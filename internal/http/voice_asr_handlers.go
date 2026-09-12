@@ -16,11 +16,11 @@ import (
 )
 
 const (
-	siliconFlowASRURL         = "https://api.siliconflow.cn/v1/audio/transcriptions"
-	siliconFlowASRModel       = "TeleAI/TeleSpeechASR"
-	maxVoiceASRUploadBytes    = 8 << 20
-	maxVoiceASRRequestBytes   = maxVoiceASRUploadBytes + (1 << 20)
-	maxVoiceASRResponseBytes  = 2 << 20
+	siliconFlowASRURL        = "https://api.siliconflow.cn/v1/audio/transcriptions"
+	siliconFlowASRModel      = "TeleAI/TeleSpeechASR"
+	maxVoiceASRUploadBytes   = 8 << 20
+	maxVoiceASRRequestBytes  = maxVoiceASRUploadBytes + (1 << 20)
+	maxVoiceASRResponseBytes = 2 << 20
 )
 
 type voiceASRResponse struct {
@@ -269,4 +269,3 @@ type asrError string
 func (e asrError) Error() string {
 	return string(e)
 }
-

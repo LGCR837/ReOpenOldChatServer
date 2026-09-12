@@ -113,6 +113,7 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	_ = api.notifications.EnsureTable(ctx)
+	data.EnsureNCUIDColumn(ctx, db)
 	_ = api.bugReportStore.EnsureTable(ctx)
 	_ = api.titles.EnsureTable(ctx)
 	startMediaCleanup(cfg.UploadDir)

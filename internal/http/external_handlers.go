@@ -20,6 +20,7 @@ type externalAuthRequest struct {
 	Account  string `json:"account"`
 	UserID   string `json:"user_id"`
 	UID      string `json:"uid"`
+	NCUID    string `json:"ncuid"`
 	Password string `json:"password"`
 }
 
@@ -41,6 +42,7 @@ type externalFriendListResponse struct {
 type externalFriendItem struct {
 	ID          string `json:"id"`
 	UID         string `json:"uid"`
+	NCUID       string `json:"ncuid"`
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
 	UserTitle   string `json:"user_title"`

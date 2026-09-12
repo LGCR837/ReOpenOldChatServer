@@ -21,6 +21,7 @@ type typingUpdateRequest struct {
 
 type typingUser struct {
 	UID      string `json:"uid"`
+	NCUID    string `json:"ncuid"`
 	IsTyping bool   `json:"is_typing"`
 }
 
@@ -31,6 +32,7 @@ type typingResponse struct {
 type typingWsPayload struct {
 	ChatID   string `json:"chat_id"`
 	UID      string `json:"uid"`
+	NCUID    string `json:"ncuid"`
 	IsGroup  bool   `json:"is_group"`
 	IsTyping bool   `json:"is_typing"`
 }

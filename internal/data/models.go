@@ -5,6 +5,7 @@ import "time"
 type User struct {
 	ID              string    `db:"id"`
 	UID             string    `db:"uid"`
+	NCUID           string    `db:"ncuid"`
 	UIDChangedAt    time.Time `db:"uid_changed_at"`
 	Email           string    `db:"email"`
 	Username        string    `db:"username"`

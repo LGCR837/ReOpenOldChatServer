@@ -27,6 +27,7 @@ type friendRespondRequest struct {
 type friendListItem struct {
 	ID            string `json:"id"`
 	UID           string `json:"uid"`
+	NCUID         string `json:"ncuid"`
 	Username      string `json:"username"`
 	DisplayName   string `json:"display_name"`
 	RemarkName    string `json:"remark_name"`
@@ -165,6 +166,7 @@ func (a *API) handleFriendList(w http.ResponseWriter, r *http.Request) {
 		resp.Friends = append(resp.Friends, friendListItem{
 			ID:            f.ID,
 			UID:           f.UID,
+			NCUID:         f.NCUID,
 			Username:      f.Username,
 			DisplayName:   f.DisplayName,
 			RemarkName:    f.RemarkName,

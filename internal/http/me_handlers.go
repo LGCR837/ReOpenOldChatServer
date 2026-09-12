@@ -11,7 +11,8 @@ import (
 )
 
 type updateUIDRequest struct {
-	UID string `json:"uid"`
+	UID   string `json:"uid"`
+	NCUID string `json:"ncuid"`
 }
 
 type updateProfileRequest struct {

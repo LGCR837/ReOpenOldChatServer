@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	kernel32           = syscall.NewLazyDLL("kernel32.dll")
-	getProcessTimes    = kernel32.NewProc("GetProcessTimes")
-	queryPerformanceCounter = kernel32.NewProc("QueryPerformanceCounter")
+	kernel32                  = syscall.NewLazyDLL("kernel32.dll")
+	getProcessTimes           = kernel32.NewProc("GetProcessTimes")
+	queryPerformanceCounter   = kernel32.NewProc("QueryPerformanceCounter")
 	queryPerformanceFrequency = kernel32.NewProc("QueryPerformanceFrequency")
 )
 

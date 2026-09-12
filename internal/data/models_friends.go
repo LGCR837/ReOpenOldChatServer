@@ -14,6 +14,7 @@ type FriendRequest struct {
 type FriendUser struct {
 	ID            string    `db:"id"`
 	UID           string    `db:"uid"`
+	NCUID         string    `db:"ncuid"`
 	Username      string    `db:"username"`
 	DisplayName   string    `db:"display_name"`
 	RemarkName    string    `db:"remark_name"`

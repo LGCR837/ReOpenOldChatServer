@@ -17,6 +17,7 @@ type directCreateUserRequest struct {
 	Username        string `json:"username"`
 	Password        string `json:"password"`
 	UID             string `json:"uid"`
+	NCUID           string `json:"ncuid"`
 	DisplayName     string `json:"display_name"`
 	CoinBalance     int    `json:"coin_balance"`
 	ReputationScore *int   `json:"reputation_score"`
@@ -123,6 +124,7 @@ func (a *API) createDirectUserForTest(ctx context.Context, req directCreateUserR
 	user := &data.User{
 		ID:              data.NewID(),
 		UID:             uid,
+		NCUID:           uid,
 		Email:           email,
 		Username:        username,
 		DisplayName:     displayName,

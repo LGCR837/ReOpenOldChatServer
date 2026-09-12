@@ -15,4 +15,3 @@ func isResourceUploadURL(raw string) bool {
 	}
 	return strings.HasPrefix(lower, "/uploads/resources/") || strings.HasPrefix(lower, "/v1/uploads/resources/")
 }
-

@@ -2712,4 +2712,3 @@ const adminDashboardHTML = `
 </div>
 </body>
 </html>`
-
