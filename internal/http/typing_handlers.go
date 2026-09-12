@@ -165,7 +165,24 @@ func (a *API) handleChatTypingStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "unauthorized")
 		return
 	}
-	user := a.typing.directStatus(chatID, myUID, time.Now())
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+	// chatID 可以是 uid 也可以是 ncuid，ncuid 优先（uid 会被改掉导致失配）
+	target, err := a.users.GetByNCUID(ctx, chatID)
+	if err == data.ErrNotFound {
+		target, err = a.users.GetByUID(ctx, chatID)
+	}
+	if err != nil {
+		if err == data.ErrNotFound {
+			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
+		return
+	}
+
+	user := a.typing.directStatus(target.UID, myUID, time.Now())
+	user.NCUID = target.NCUID
 	writeJSON(w, http.StatusOK, typingResponse{Users: []typingUser{user}})
 }
 

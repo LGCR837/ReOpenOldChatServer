@@ -41,7 +41,12 @@ func (a *API) handleMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toSelfUserResponse(user))
+	resp := toSelfUserResponse(user)
+	// 官方 /v1/me 带 ban_count，客户端据此决定是否提示封禁
+	if n, err := a.users.CountActiveBans(ctx, user.ID); err == nil {
+		resp.BanCount = n
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 func (a *API) handleUpdateUID(w http.ResponseWriter, r *http.Request) {

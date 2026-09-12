@@ -350,8 +350,11 @@ func (a *API) handleGroupMessageDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 从URL路径中提取消息ID
-	messageID := strings.TrimPrefix(r.URL.Path, "/v1/groups/messages/")
+	// chi 参数优先（/v2 路由），裸路径兜底（v1 网关重放时可能是原始 path）
+	messageID := strings.TrimSpace(chiURLParam(r, "messageID"))
+	if messageID == "" {
+		messageID = strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/groups/messages/"))
+	}
 	if messageID == "" || messageID == r.URL.Path {
 		writeError(w, http.StatusBadRequest, "invalid_message_id", "invalid message id")
 		return

@@ -267,6 +267,48 @@ LIMIT $2`
 	return msgs, nil
 }
 
+// ListAfter 返回 cursor 之后的群消息（正序），供 /v2/groups/messages/after 增量拉取。
+func (s *GroupMessageStore) ListAfter(ctx context.Context, groupID, afterID string, limit int) ([]GroupMessage, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+
+	var msgs []GroupMessage
+	if afterID == "" {
+		const qHead = `
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+FROM group_messages
+WHERE group_id = $1
+ORDER BY created_at DESC, rowid DESC
+LIMIT $2`
+		if err := s.db.SelectContext(ctx, &msgs, qHead, groupID, limit); err != nil {
+			return nil, err
+		}
+		reverseMessages(msgs)
+		return msgs, nil
+	}
+
+	// created_at 只到秒，同秒消息必须靠 rowid 打破平局：rowid 单调递增，
+	// 保证「after=某条」不会把同秒的后续消息判成「之前」而永久跳过。
+	const q = `
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+FROM group_messages
+WHERE group_id = $1
+  AND (created_at, rowid) > (SELECT created_at, rowid FROM group_messages WHERE id = $2 AND group_id = $1)
+ORDER BY created_at, rowid
+LIMIT $3`
+	if err := s.db.SelectContext(ctx, &msgs, q, groupID, afterID, limit); err != nil {
+		return nil, err
+	}
+	return msgs, nil
+}
+
+func reverseMessages(msgs []GroupMessage) {
+	for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
+		msgs[i], msgs[j] = msgs[j], msgs[i]
+	}
+}
+
 func (s *GroupMessageStore) UpdateMessageBody(ctx context.Context, messageID, body string) error {
 	result, err := s.db.ExecContext(ctx, `
 UPDATE group_messages

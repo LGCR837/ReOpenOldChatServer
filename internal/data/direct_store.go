@@ -370,6 +370,49 @@ WHERE thread_id = $1
 	return offset, nil
 }
 
+// ListAfter 返回 cursor 之后的私聊消息（正序），供 /v2/direct/messages/after 增量拉取。
+func (s *DirectStore) ListAfter(ctx context.Context, threadID, afterID string, limit int) ([]DirectMessage, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+
+	const cols = `id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at`
+
+	var msgs []DirectMessage
+	if afterID == "" {
+		const qHead = `
+SELECT ` + cols + `
+FROM direct_messages
+WHERE thread_id = $1
+ORDER BY created_at DESC, rowid DESC
+LIMIT $2`
+		if err := s.db.SelectContext(ctx, &msgs, qHead, threadID, limit); err != nil {
+			return nil, err
+		}
+		reverseDirect(msgs)
+		return msgs, nil
+	}
+
+	// 同秒消息靠 rowid 打破平局，见 group_message_store.ListAfter 注释。
+	const q = `
+SELECT ` + cols + `
+FROM direct_messages
+WHERE thread_id = $1
+  AND (created_at, rowid) > (SELECT created_at, rowid FROM direct_messages WHERE id = $2 AND thread_id = $1)
+ORDER BY created_at, rowid
+LIMIT $3`
+	if err := s.db.SelectContext(ctx, &msgs, q, threadID, afterID, limit); err != nil {
+		return nil, err
+	}
+	return msgs, nil
+}
+
+func reverseDirect(msgs []DirectMessage) {
+	for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
+		msgs[i], msgs[j] = msgs[j], msgs[i]
+	}
+}
+
 func (s *DirectStore) UpdateMessageBody(ctx context.Context, messageID, body string) error {
 	result, err := s.db.ExecContext(ctx, `
 UPDATE direct_messages

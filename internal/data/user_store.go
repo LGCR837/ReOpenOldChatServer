@@ -468,6 +468,17 @@ func (s *UserStore) Count(ctx context.Context) (int, error) {
 	return count, nil
 }
 
+// CountActiveBans 返回该用户当前生效的封禁记录数（官方 /v1/me 的 ban_count 语义）。
+func (s *UserStore) CountActiveBans(ctx context.Context, userID string) (int, error) {
+	var n int
+	err := s.db.GetContext(ctx, &n, `
+SELECT COUNT(1)
+FROM banned_users
+WHERE user_id = $1 AND (banned_until IS NULL OR banned_until > CURRENT_TIMESTAMP)
+`, userID)
+	return n, err
+}
+
 func (s *UserStore) ListRecent(ctx context.Context, limit int) ([]UserAdminRow, error) {
 	if limit <= 0 || limit > 1000 {
 		limit = 50

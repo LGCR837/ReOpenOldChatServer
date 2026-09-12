@@ -95,9 +95,9 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 	toUID := strings.ToUpper(strings.TrimSpace(req.ToUID))
 	toNCUID := strings.ToUpper(strings.TrimSpace(req.ToNCUID))
 	// ncuid 不可变、uid 可被改掉，两者都给时以 ncuid 为准
-	lookupKey, lookupByNCUID := toUID, false
+	lookupKey := toUID
 	if toNCUID != "" {
-		lookupKey, lookupByNCUID = toNCUID, true
+		lookupKey = toNCUID
 	}
 	body := strings.TrimSpace(req.Body)
 	msgType := strings.ToLower(strings.TrimSpace(req.MsgType))
@@ -166,23 +166,17 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 		return
 	}
-	if lookupKey == currentUser.UID || (lookupByNCUID && lookupKey == currentUser.NCUID) {
-		writeError(w, http.StatusBadRequest, "invalid_uid", "cannot message yourself")
-		return
-	}
-
-	var targetUser *data.User
-	if lookupByNCUID {
-		targetUser, err = a.users.GetByNCUID(ctx, lookupKey)
-	} else {
-		targetUser, err = a.users.GetByUID(ctx, lookupKey)
-	}
+	targetUser, err := a.lookupPublicID(ctx, toUID, toNCUID)
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
+		return
+	}
+	if targetUser.ID == currentUser.ID {
+		writeError(w, http.StatusBadRequest, "invalid_uid", "cannot message yourself")
 		return
 	}
 
@@ -665,9 +659,10 @@ func (a *API) handleDirectRead(w http.ResponseWriter, r *http.Request) {
 
 	toUID := strings.ToUpper(strings.TrimSpace(req.WithUID))
 	toNCUID := strings.ToUpper(strings.TrimSpace(req.WithNCUID))
-	lookupKey, lookupByNCUID := toUID, false
+	// ncuid 不可变、uid 可被改掉，两者都给时以 ncuid 为准
+	lookupKey := toUID
 	if toNCUID != "" {
-		lookupKey, lookupByNCUID = toNCUID, true
+		lookupKey = toNCUID
 	}
 	if !isValidUID(lookupKey) {
 		writeError(w, http.StatusBadRequest, "invalid_uid", "invalid uid")
@@ -681,12 +676,7 @@ func (a *API) handleDirectRead(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 		return
 	}
-	var targetUser *data.User
-	if lookupByNCUID {
-		targetUser, err = a.users.GetByNCUID(ctx, lookupKey)
-	} else {
-		targetUser, err = a.users.GetByUID(ctx, lookupKey)
-	}
+	targetUser, err := a.lookupPublicID(ctx, toUID, toNCUID)
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
@@ -733,8 +723,11 @@ func (a *API) handleDirectMessageDelete(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// 从URL路径中提取消息ID
-	messageID := strings.TrimPrefix(r.URL.Path, "/v1/direct/messages/")
+	// chi 参数优先（/v2 路由），裸路径兜底（v1 网关重放时可能是原始 path）
+	messageID := strings.TrimSpace(chiURLParam(r, "messageID"))
+	if messageID == "" {
+		messageID = strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/direct/messages/"))
+	}
 	if messageID == "" || messageID == r.URL.Path {
 		writeError(w, http.StatusBadRequest, "invalid_message_id", "invalid message id")
 		return

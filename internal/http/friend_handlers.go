@@ -75,9 +75,10 @@ func (a *API) handleFriendRequest(w http.ResponseWriter, r *http.Request) {
 
 	toUID := strings.ToUpper(strings.TrimSpace(req.ToUID))
 	toNCUID := strings.ToUpper(strings.TrimSpace(req.ToNCUID))
-	lookupKey, lookupByNCUID := toUID, false
+	// ncuid 不可变、uid 可被改掉，两者都给时以 ncuid 为准
+	lookupKey := toUID
 	if toNCUID != "" {
-		lookupKey, lookupByNCUID = toNCUID, true
+		lookupKey = toNCUID
 	}
 	if !isValidUID(lookupKey) {
 		writeError(w, http.StatusBadRequest, "invalid_uid", "invalid uid")
@@ -96,23 +97,17 @@ func (a *API) handleFriendRequest(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 		return
 	}
-	if lookupKey == currentUser.UID || (lookupByNCUID && lookupKey == currentUser.NCUID) {
-		writeError(w, http.StatusBadRequest, "invalid_uid", "cannot friend yourself")
-		return
-	}
-
-	var targetUser *data.User
-	if lookupByNCUID {
-		targetUser, err = a.users.GetByNCUID(ctx, lookupKey)
-	} else {
-		targetUser, err = a.users.GetByUID(ctx, lookupKey)
-	}
+	targetUser, err := a.lookupPublicID(ctx, toUID, toNCUID)
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
+		return
+	}
+	if targetUser.ID == currentUser.ID {
+		writeError(w, http.StatusBadRequest, "invalid_uid", "cannot friend yourself")
 		return
 	}
 

@@ -76,6 +76,7 @@ type selfUserResponse struct {
 	CoverURL        string `json:"cover_url"`
 	CoinBalance     int    `json:"coin_balance"`
 	ReputationScore int    `json:"reputation_score"`
+	BanCount        int    `json:"ban_count"`
 }
 
 type authResponse struct {

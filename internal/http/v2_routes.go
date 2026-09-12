@@ -18,6 +18,10 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Post("/direct/send", api.handleDirectSend)
 		r.Post("/direct/read", api.handleDirectRead)
 		r.Get("/direct/messages/v2", api.handleDirectMessagesV2)
+		r.Get("/direct/messages/search", api.handleDirectMessagesSearch)
+		r.Get("/direct/messages", api.handleDirectMessages)
+		r.Get("/direct/messages/after", api.handleDirectMessagesAfter)
+		r.Delete("/direct/messages/{messageID}", api.handleDirectMessageDelete)
 		r.Post("/unread/direct", api.handleDirectUnread) // v1: /direct/unread
 
 		// ---- 群 ----
@@ -38,7 +42,13 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Post("/groups/typing", api.handleGroupTyping)
 		r.Get("/groups/list", api.handleGroupList)
 		r.Get("/groups/members", api.handleGroupMembers)
+		r.Post("/groups/message/send", api.handleGroupMessageSend)
 		r.Get("/groups/messages/v2", api.handleGroupMessagesV2)
+		r.Get("/groups/messages/search", api.handleGroupMessagesSearch)
+		r.Get("/groups/messages", api.handleGroupMessages)
+		r.Get("/groups/messages/after", api.handleGroupMessagesAfter)
+		r.Delete("/groups/messages/{messageID}", api.handleGroupMessageDelete)
+		r.Get("/groups/{groupId}/typing", api.handleGroupTypingStatus)
 		r.Post("/groups/read", api.handleGroupRead)
 		r.Post("/unread/groups", api.handleGroupUnread) // v1: /groups/unread
 
@@ -51,12 +61,16 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Post("/friends/delete", api.handleFriendDelete)
 
 		// ---- 我的 ----
+		r.Get("/me", api.handleMe)
+		r.Post("/media", api.handleMediaUpload)
+		r.Get("/notifications", api.handleNotificationList)
 		r.Post("/me/uid", api.handleUpdateUID)
 		r.Post("/me/profile", api.handleUpdateProfile)
 		r.Post("/me/avatar", api.handleAvatarUpload)
 		r.Post("/me/cover", api.handleCoverUpload)
 		r.Post("/me/checkin", api.handleMeCheckIn)
 		r.Get("/me/devices", api.handleMeDevices)
+		r.Post("/me/devices/cleanup", api.handleMeDevicesCleanupOthers)
 		r.Post("/me/password", api.handleUpdatePassword)
 		r.Get("/me/group-reports", api.handleMeGroupReports)
 		r.Get("/me/bug-reports", api.handleMeBugReports)
@@ -67,6 +81,7 @@ func (api *API) registerV2Routes(r chi.Router) {
 		// ---- 红包 ----
 		r.Post("/redpackets/send", api.handleRedPacketSend)
 		r.Post("/redpackets/claim", api.handleRedPacketClaim)
+		r.Get("/redpackets/{packetID}", api.handleRedPacketDetail)
 
 		// ---- 朋友圈 ----
 		r.Get("/moments", api.handleMomentFeed)
@@ -77,9 +92,11 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Post("/moments/comment/delete", api.handleMomentCommentDelete)
 		r.Get("/moments/comments", api.handleMomentComments)
 		r.Post("/moments/delete", api.handleMomentDelete)
+		r.Get("/moments/v2", api.handleMomentFeedV2)
 		r.Get("/moments/user", api.handleMomentUserFeed)
 
 		// ---- 输入状态 ----
 		r.Post("/chats/typing", api.handleChatTyping)
+		r.Get("/chats/{chatId}/typing", api.handleChatTypingStatus)
 	})
 }
