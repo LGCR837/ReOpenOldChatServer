@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"metrochat/internal/data"
-	"metrochat/internal/mail"
-	"metrochat/internal/verify"
+	"ReOpenOldChatServer/internal/data"
+	"ReOpenOldChatServer/internal/mail"
+	"ReOpenOldChatServer/internal/verify"
 )
 
 type captchaResponse struct {

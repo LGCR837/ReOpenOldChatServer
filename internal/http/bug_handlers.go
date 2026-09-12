@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 func (a *API) handleSubmitBugReport(w http.ResponseWriter, r *http.Request) {

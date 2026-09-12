@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 const (

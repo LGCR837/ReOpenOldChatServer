@@ -14,8 +14,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"metrochat/internal/config"
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/config"
+	"ReOpenOldChatServer/internal/data"
 )
 
 type adminStats struct {

@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"metrochat/internal/auth"
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/auth"
+	"ReOpenOldChatServer/internal/data"
 )
 
 type ctxKey string

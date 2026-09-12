@@ -9,12 +9,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 
-	"metrochat/internal/config"
-	"metrochat/internal/data"
-	"metrochat/internal/ratelimit"
-	"metrochat/internal/secure"
-	"metrochat/internal/verify"
-	"metrochat/internal/ws"
+	"ReOpenOldChatServer/internal/config"
+	"ReOpenOldChatServer/internal/data"
+	"ReOpenOldChatServer/internal/ratelimit"
+	"ReOpenOldChatServer/internal/secure"
+	"ReOpenOldChatServer/internal/verify"
+	"ReOpenOldChatServer/internal/ws"
 )
 
 type API struct {

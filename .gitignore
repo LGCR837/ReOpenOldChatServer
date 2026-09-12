@@ -1,14 +1,14 @@
 # 构建产物
-ocserver_windows_amd64.exe
-ocserver_linux_amd64
-ocserver_*_amd64
-ocserver_*_amd64.exe
-ocserver_*_386
-ocserver_*_386.exe
-ocserver_*_arm64
-ocserver_*_arm64.exe
-ocserver_*_arm
-ocserver_*_arm.exe
+reopenoldchatserver_windows_amd64.exe
+reopenoldchatserver_linux_amd64
+reopenoldchatserver_*_amd64
+reopenoldchatserver_*_amd64.exe
+reopenoldchatserver_*_386
+reopenoldchatserver_*_386.exe
+reopenoldchatserver_*_arm64
+reopenoldchatserver_*_arm64.exe
+reopenoldchatserver_*_arm
+reopenoldchatserver_*_arm.exe
 build/
 *.exe~
 nul.exe

@@ -14,7 +14,7 @@ import (
 
 	"github.com/aidarkhanov/nanoid"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 func (a *API) handleAvatarUpload(w http.ResponseWriter, r *http.Request) {

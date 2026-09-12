@@ -8,7 +8,7 @@ import (
 
 	"github.com/aidarkhanov/nanoid"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 type friendRequestRequest struct {

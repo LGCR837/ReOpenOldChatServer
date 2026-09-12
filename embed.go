@@ -1,4 +1,4 @@
-package metrochat
+package ReOpenOldChatServer
 
 import "embed"
 

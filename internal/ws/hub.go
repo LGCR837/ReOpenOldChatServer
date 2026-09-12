@@ -3,7 +3,7 @@ package ws
 import (
 	"sync"
 
-	"metrochat/internal/secure"
+	"ReOpenOldChatServer/internal/secure"
 )
 
 type Hub struct {

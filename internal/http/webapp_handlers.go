@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	mc "metrochat"
+	mc "ReOpenOldChatServer"
 )
 
 // webappFS returns the embedded webapp/ filesystem as an fs.FS.

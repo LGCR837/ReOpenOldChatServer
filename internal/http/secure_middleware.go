@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"metrochat/internal/secure"
+	"ReOpenOldChatServer/internal/secure"
 )
 
 const encHeader = "X-Enc"

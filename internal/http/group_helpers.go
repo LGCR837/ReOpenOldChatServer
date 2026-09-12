@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 func (a *API) createGroupWithRetry(ctx context.Context, ownerID, name string) (string, error) {

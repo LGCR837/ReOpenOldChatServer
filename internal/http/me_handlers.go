@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"metrochat/internal/auth"
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/auth"
+	"ReOpenOldChatServer/internal/data"
 )
 
 type updateUIDRequest struct {

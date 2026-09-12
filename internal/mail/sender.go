@@ -48,7 +48,7 @@ func DefaultSender() *Sender {
 
 	fromName := os.Getenv("SENDCLOUD_FROM_NAME")
 	if fromName == "" {
-		fromName = "OldChat-AACR"
+		fromName = "ReOpenOldChat"
 	}
 
 	return &Sender{

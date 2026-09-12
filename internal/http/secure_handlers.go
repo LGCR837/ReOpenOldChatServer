@@ -9,7 +9,7 @@ import (
 	"errors"
 	"net/http"
 
-	"metrochat/internal/secure"
+	"ReOpenOldChatServer/internal/secure"
 )
 
 type handshakeRequest struct {

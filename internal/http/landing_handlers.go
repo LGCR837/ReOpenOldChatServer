@@ -11,8 +11,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"metrochat/internal/auth"
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/auth"
+	"ReOpenOldChatServer/internal/data"
 )
 
 const shopTokenCookie = "shop_token"

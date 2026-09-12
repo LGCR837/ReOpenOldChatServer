@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"metrochat/internal/config"
-	"metrochat/internal/data"
-	httpapi "metrochat/internal/http"
+	"ReOpenOldChatServer/internal/config"
+	"ReOpenOldChatServer/internal/data"
+	httpapi "ReOpenOldChatServer/internal/http"
 )
 
 func main() {

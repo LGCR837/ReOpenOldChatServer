@@ -13,7 +13,7 @@ import (
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-chi/chi/v5"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 const redPacketDefaultTitle = ""

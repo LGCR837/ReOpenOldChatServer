@@ -10,7 +10,7 @@ import (
 
 	"github.com/aidarkhanov/nanoid"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 const maxVoiceDurationMS = 60000

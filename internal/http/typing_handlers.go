@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 const typingTTL = 8 * time.Second

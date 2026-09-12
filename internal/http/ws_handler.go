@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"metrochat/internal/auth"
-	"metrochat/internal/ws"
+	"ReOpenOldChatServer/internal/auth"
+	"ReOpenOldChatServer/internal/ws"
 )
 
 var wsUpgrader = websocket.Upgrader{

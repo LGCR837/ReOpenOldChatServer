@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/data"
 )
 
 func (a *API) handleNotificationList(w http.ResponseWriter, r *http.Request) {

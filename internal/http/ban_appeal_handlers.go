@@ -10,8 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"metrochat/internal/auth"
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/auth"
+	"ReOpenOldChatServer/internal/data"
 )
 
 type iGotBannedPageData struct {

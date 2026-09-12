@@ -12,8 +12,8 @@ import (
 
 	"github.com/aidarkhanov/nanoid"
 
-	"metrochat/internal/auth"
-	"metrochat/internal/data"
+	"ReOpenOldChatServer/internal/auth"
+	"ReOpenOldChatServer/internal/data"
 )
 
 type externalAuthRequest struct {

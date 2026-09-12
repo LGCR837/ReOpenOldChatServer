@@ -1,4 +1,4 @@
-﻿# OcServer 编译脚本
+﻿# ReOpenOldChat Server 编译脚本
 # 用法: pwsh ./build.ps1
 
 $ErrorActionPreference = "Stop"
@@ -6,7 +6,7 @@ $ProjectRoot = $PSScriptRoot
 $EntryPkg = "./cmd/api"
 
 Write-Host ""
-Write-Host "===== OcServer Build Script =====" -ForegroundColor Cyan
+Write-Host "===== ReOpenOldChat Server Build Script =====" -ForegroundColor Cyan
 Write-Host "  1. Windows amd64 调试 (根目录)"
 Write-Host "  2. Linux   amd64 调试 (根目录, 静态)"
 Write-Host "  3. 生产环境全平台编译 (build/)"
@@ -20,10 +20,10 @@ switch ($choice) {
         $env:GOOS = "windows"
         $env:GOARCH = "amd64"
         Remove-Item Env:\CGO_ENABLED -ErrorAction SilentlyContinue
-        go build -o "ocserver_windows_amd64.exe" $EntryPkg
+        go build -o "reopenoldchatserver_windows_amd64.exe" $EntryPkg
         Pop-Location
         if ($LASTEXITCODE -eq 0) {
-            Write-Host ">> 完成: ocserver_windows_amd64.exe" -ForegroundColor Green
+            Write-Host ">> 完成: reopenoldchatserver_windows_amd64.exe" -ForegroundColor Green
         } else {
             Write-Host ">> 编译失败" -ForegroundColor Red
             exit 1
@@ -35,10 +35,10 @@ switch ($choice) {
         $env:GOOS = "linux"
         $env:GOARCH = "amd64"
         $env:CGO_ENABLED = "0"
-        go build -o "ocserver_linux_amd64" $EntryPkg
+        go build -o "reopenoldchatserver_linux_amd64" $EntryPkg
         Pop-Location
         if ($LASTEXITCODE -eq 0) {
-            Write-Host ">> 完成: ocserver_linux_amd64" -ForegroundColor Green
+            Write-Host ">> 完成: reopenoldchatserver_linux_amd64" -ForegroundColor Green
         } else {
             Write-Host ">> 编译失败" -ForegroundColor Red
             exit 1
@@ -77,7 +77,7 @@ switch ($choice) {
             $arch = $t.GOARCH
             $display = $t.Display
             $ext = $t.Ext
-            $outName = "ocserver_${os}_${display}_${version}${ext}"
+            $outName = "reopenoldchatserver_${os}_${display}_${version}${ext}"
             $outPath = Join-Path $BuildDir $outName
 
             Write-Host "`n[$idx/$total] 编译 $os/$arch -> $outName" -ForegroundColor Yellow

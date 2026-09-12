@@ -1,4 +1,4 @@
-module metrochat
+module ReOpenOldChatServer
 
 go 1.24.0
 
