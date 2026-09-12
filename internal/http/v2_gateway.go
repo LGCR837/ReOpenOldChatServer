@@ -2,9 +2,12 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 	"strings"
 )
 
@@ -48,7 +51,8 @@ func (a *API) handleV2Gateway(w http.ResponseWriter, r *http.Request) {
 		target += "?" + req.Q
 	}
 
-	inner, err := http.NewRequestWithContext(r.Context(), method, target, io.NopCloser(bytes.NewReader(req.B)))
+	// 必须重置 chi RouteContext：外层已写入 /v2/gateway 的路由状态，复用会让内部重放误匹配
+	inner, err := http.NewRequestWithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chi.NewRouteContext()), method, target, io.NopCloser(bytes.NewReader(req.B)))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "bad_path", "invalid path")
 		return
@@ -59,6 +63,7 @@ func (a *API) handleV2Gateway(w http.ResponseWriter, r *http.Request) {
 	inner.Header.Del(hdrGatewayVerified)
 	inner.Header.Set(hdrGatewayVerified, "1")
 	inner.Header.Set("Content-Type", "application/json")
+	inner.Header.Del("Accept-Encoding") // 重放结果还要二次序列化，不能先 gzip
 
 	rec := newBufferWriter()
 	a.router.ServeHTTP(rec, inner)
@@ -67,8 +72,17 @@ func (a *API) handleV2Gateway(w http.ResponseWriter, r *http.Request) {
 	if status == 0 {
 		status = http.StatusOK
 	}
+	// 空 body 不能塞进 json.RawMessage，否则 marshal 失败导致整个响应丢失
+	body := bytes.TrimSpace(rec.buf.Bytes())
+	switch {
+	case len(body) == 0:
+		body = []byte("null")
+	case !json.Valid(body):
+		// 非 JSON（如 chi 的 404 纯文本）直接塞 RawMessage 会让整个响应 marshal 失败
+		body, _ = json.Marshal(string(body))
+	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"code": status,
-		"body": json.RawMessage(rec.buf.Bytes()),
+		"body": json.RawMessage(body),
 	})
 }
