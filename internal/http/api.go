@@ -54,6 +54,8 @@ type API struct {
 	adminSessions     *adminSessions
 	ipLimiter         *ratelimit.Limiter
 	idLimiter         *ratelimit.Limiter
+	v2Nonces          *nonceCache
+	router            chi.Router
 	typing            *typingStore
 	tokenVersionMu    sync.Mutex
 	tokenVersionCache map[string]tokenVersionEntry
@@ -94,6 +96,7 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 		titles:            data.NewTitleCatalogStore(db),
 		wsHub:             ws.NewHub(),
 		sessions:          secure.NewSessionStore(),
+		v2Nonces:          newNonceCache(),
 		captchas:          verify.NewCaptchaStore(),
 		emailCodes:        verify.NewEmailCodeStore(),
 		sendLimiter:       verify.NewSendLimiter(),
@@ -189,7 +192,9 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 
 	r.Route("/v1", api.registerV1Routes)
 	r.Route("/v1/v1", api.registerV1Routes)
+	r.Route("/v2", api.registerV2Routes)
 
+	api.router = r
 	return r
 }
 

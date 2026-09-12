@@ -39,6 +39,8 @@ type Config struct {
 	VideoDownloadConcurrency  int
 	MusicDownloadConcurrency  int
 	EmailVerifyEnabled        bool
+	// V2SignRequired 关闭后 /v2/* 跳过 HMAC 签名校验，仅联调用。
+	V2SignRequired bool
 }
 
 func Load() (Config, error) {
@@ -66,6 +68,7 @@ func Load() (Config, error) {
 	cfg.MusicDownloadConcurrency = 8
 	cfg.VideoEnabled = false
 	cfg.EmailVerifyEnabled = true
+	cfg.V2SignRequired = true
 	cfg.JWTIssuer = "metrochat"
 	cfg.RefreshTokenTTL = 30 * 24 * time.Hour
 
@@ -196,6 +199,9 @@ func Load() (Config, error) {
 	}
 	if raw, ok := getEnvRaw("EMAIL_VERIFY_ENABLED"); ok {
 		cfg.EmailVerifyEnabled = parseBool(raw, cfg.EmailVerifyEnabled)
+	}
+	if raw, ok := getEnvRaw("V2_SIGN_REQUIRED"); ok {
+		cfg.V2SignRequired = parseBool(raw, cfg.V2SignRequired)
 	}
 
 	// JWT secret handling
