@@ -45,12 +45,24 @@ type groupMembersResponse struct {
 type groupInviteRequest struct {
 	GroupID string `json:"group_id"`
 	UserUID string `json:"user_uid"`
+	ToNCUID string `json:"to_ncuid"`
+	NCUID   string `json:"ncuid"`
 }
 
 type groupAdminRequest struct {
 	GroupID string `json:"group_id"`
 	UserUID string `json:"user_uid"`
+	ToNCUID string `json:"to_ncuid"`
+	NCUID   string `json:"ncuid"`
 	Admin   bool   `json:"admin"`
+}
+
+// groupTargetNCUID 兼容 to_ncuid / ncuid 两种写法，返回归一化后的值。
+func groupTargetNCUID(toNCUID, legacyNCUID string) string {
+	if v := strings.ToUpper(strings.TrimSpace(toNCUID)); v != "" {
+		return v
+	}
+	return strings.ToUpper(strings.TrimSpace(legacyNCUID))
 }
 
 type groupAvatarRequest struct {
@@ -183,7 +195,8 @@ func (a *API) handleGroupInvite(w http.ResponseWriter, r *http.Request) {
 
 	groupID := strings.ToUpper(strings.TrimSpace(req.GroupID))
 	userUID := strings.ToUpper(strings.TrimSpace(req.UserUID))
-	if !isValidGroupID(groupID) || !isValidUID(userUID) {
+	userNCUID := groupTargetNCUID(req.ToNCUID, req.NCUID)
+	if !isValidGroupID(groupID) || (userNCUID == "" && !isValidUID(userUID)) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "invalid input")
 		return
 	}
@@ -204,7 +217,7 @@ func (a *API) handleGroupInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetUser, err := a.users.GetByUID(ctx, userUID)
+	targetUser, err := a.lookupPublicID(ctx, userUID, userNCUID)
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
@@ -235,6 +248,7 @@ func (a *API) handleGroupInvite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
+	a.emitGroupMembershipChange(ctx, groupID, targetUser.ID)
 }
 
 func (a *API) handleGroupAdmin(w http.ResponseWriter, r *http.Request) {
@@ -256,7 +270,8 @@ func (a *API) handleGroupAdmin(w http.ResponseWriter, r *http.Request) {
 
 	groupID := strings.ToUpper(strings.TrimSpace(req.GroupID))
 	userUID := strings.ToUpper(strings.TrimSpace(req.UserUID))
-	if !isValidGroupID(groupID) || !isValidUID(userUID) {
+	userNCUID := groupTargetNCUID(req.ToNCUID, req.NCUID)
+	if !isValidGroupID(groupID) || (userNCUID == "" && !isValidUID(userUID)) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "invalid input")
 		return
 	}
@@ -277,7 +292,7 @@ func (a *API) handleGroupAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetUser, err := a.users.GetByUID(ctx, userUID)
+	targetUser, err := a.lookupPublicID(ctx, userUID, userNCUID)
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")

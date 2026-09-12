@@ -45,6 +45,7 @@ type API struct {
 	groupReportStore  *data.GroupReportStore
 	bugReportStore    *data.BugReportStore
 	notifications     *data.NotificationStore
+	updates           *data.UpdateStore
 	titles            *data.TitleCatalogStore
 	wsHub             *ws.Hub
 	sessions          *secure.SessionStore
@@ -93,6 +94,7 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 		groupReportStore:  data.NewGroupReportStore(db),
 		bugReportStore:    data.NewBugReportStore(db),
 		notifications:     data.NewNotificationStore(db),
+		updates:           data.NewUpdateStore(db),
 		titles:            data.NewTitleCatalogStore(db),
 		wsHub:             ws.NewHub(),
 		sessions:          secure.NewSessionStore(),

@@ -12,6 +12,8 @@ import (
 type groupKickRequest struct {
 	GroupID string `json:"group_id"`
 	UserUID string `json:"user_uid"`
+	ToNCUID string `json:"to_ncuid"`
+	NCUID   string `json:"ncuid"`
 }
 
 type groupRenameRequest struct {
@@ -54,14 +56,15 @@ func (a *API) handleGroupKick(w http.ResponseWriter, r *http.Request) {
 
 	groupID := strings.ToUpper(strings.TrimSpace(req.GroupID))
 	userUID := strings.ToUpper(strings.TrimSpace(req.UserUID))
-	if !isValidGroupID(groupID) || !isValidUID(userUID) {
+	userNCUID := groupTargetNCUID(req.ToNCUID, req.NCUID)
+	if !isValidGroupID(groupID) || (userNCUID == "" && !isValidUID(userUID)) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "invalid input")
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
-	targetUser, err := a.users.GetByUID(ctx, userUID)
+	targetUser, err := a.lookupPublicID(ctx, userUID, userNCUID)
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
@@ -113,6 +116,7 @@ func (a *API) handleGroupKick(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
+	a.emitGroupMembershipChange(ctx, groupID, targetUser.ID)
 }
 
 func (a *API) handleGroupRename(w http.ResponseWriter, r *http.Request) {
@@ -375,10 +379,17 @@ func (a *API) handleGroupDissolve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 解散前先取成员名单：群删掉后 group_members 会被级联清空，届时无从得知通知谁
+	memberIDs := a.groupMemberIDs(ctx, groupID)
+
 	if err := a.groups.Delete(ctx, groupID); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 		return
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
+	a.emitAccountEventMany(memberIDs, "GROUP_MEMBERSHIP_CHANGE", map[string]any{
+		"group_id":  groupID,
+		"hint_type": "dissolved",
+	}, 1)
 }

@@ -347,6 +347,7 @@ VALUES ($1, $2, $3, $4, $5, '', '', 0, CURRENT_TIMESTAMP)
 			}
 			a.wsHub.BroadcastToUser(memberID, payload)
 		}
+		a.emitAccountEventMany(memberIDs, "RED_PACKET_NEW", map[string]any{"message": resp}, 1)
 		return
 	}
 
@@ -369,6 +370,7 @@ VALUES ($1, $2, $3, $4, $5, '', '', 0, CURRENT_TIMESTAMP)
 	if err == nil {
 		a.wsHub.BroadcastToUser(targetUser.ID, payload)
 	}
+	a.emitAccountEvent(targetUser.ID, "RED_PACKET_NEW", map[string]any{"message": resp}, 1)
 }
 
 func (a *API) handleRedPacketClaim(w http.ResponseWriter, r *http.Request) {
@@ -540,6 +542,13 @@ WHERE id = $2
 		RemainingAmount: newRemainingAmount,
 		RemainingCount:  newRemainingCount,
 	})
+	a.emitAccountEvent(packet.CreatorID, "RED_PACKET_CLAIMED", map[string]any{
+		"packet_id":     packetID,
+		"claimer_uid":   claims.UID,
+		"claimer_ncuid": claims.NCUID,
+		"amount":        amount,
+		"claimed_at":    time.Now().Unix(),
+	}, 1)
 }
 
 func (a *API) handleRedPacketDetail(w http.ResponseWriter, r *http.Request) {

@@ -150,6 +150,12 @@ func (a *API) handleFriendRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, friendRequestResponse{RequestID: id})
+	a.emitAccountEvent(targetUser.ID, "FRIEND_REQUEST", map[string]any{
+		"request_id": id,
+		"from_uid":   currentUser.UID,
+		"from_ncuid": currentUser.NCUID,
+		"created_at": time.Now().Unix(),
+	}, 1)
 }
 
 func (a *API) handleFriendList(w http.ResponseWriter, r *http.Request) {
@@ -258,6 +264,11 @@ func (a *API) handleFriendRespond(w http.ResponseWriter, r *http.Request) {
 		}
 		// 通知申请者好友请求已被接受
 		go a.sendFriendAcceptedNotification(fromUserID, claims.Subject)
+		a.emitAccountEvent(fromUserID, "FRIEND_ACCEPT", map[string]any{
+			"request_id": requestID,
+			"uid":        claims.UID,
+			"ncuid":      claims.NCUID,
+		}, 1)
 	} else {
 		fromUserID, err := a.friendReqs.Deny(ctx, requestID, claims.Subject)
 		if err != nil {
@@ -419,6 +430,10 @@ func (a *API) handleFriendDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
+	a.emitAccountEvent(friendUser.ID, "FRIEND_DELETE", map[string]any{
+		"uid":   currentUser.UID,
+		"ncuid": currentUser.NCUID,
+	}, 1)
 }
 
 func (a *API) sendFriendAcceptedNotification(toUserID, fromUserID string) {

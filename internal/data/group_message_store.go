@@ -52,6 +52,14 @@ VALUES (:id, :group_id, :sender_id, :sender_ncuid, :body, :msg_type, :media_url,
 	return err
 }
 
+// CountByGroup 返回群内消息总数，作为 /v2/groups/messages/after 的 server_group_seq。
+// 消息只增不删（撤回走 body 改写），故计数即当前序号。
+func (s *GroupMessageStore) CountByGroup(ctx context.Context, groupID string) (int64, error) {
+	var n int64
+	err := s.db.GetContext(ctx, &n, `SELECT COUNT(1) FROM group_messages WHERE group_id = $1`, groupID)
+	return n, err
+}
+
 func (s *GroupMessageStore) GetByID(ctx context.Context, messageID string) (*GroupMessage, error) {
 	var m GroupMessage
 	err := s.db.GetContext(ctx, &m, `

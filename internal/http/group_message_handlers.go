@@ -37,6 +37,10 @@ type groupMessageResponse struct {
 type groupMessagesResponse struct {
 	Messages        []groupMessageResponse `json:"messages"`
 	EffectiveOffset int                    `json:"effective_offset,omitempty"`
+	// 不带 omitempty：has_more=false 是有效语义，客户端要靠字段存在与否区分「无更多」和「服务端不支持」
+	ServerGroupSeq int64 `json:"server_group_seq,omitempty"`
+	HasMore        bool  `json:"has_more"`
+	NextGroupSeq   int64 `json:"next_group_seq,omitempty"`
 }
 
 type groupUnreadRequest struct {
@@ -215,6 +219,12 @@ func (a *API) handleGroupMessageSend(w http.ResponseWriter, r *http.Request) {
 		}
 		a.wsHub.BroadcastToUser(memberID, payload)
 	}
+	a.emitAccountEventMany(memberIDs, "MESSAGE_NEW", map[string]any{"message": resp}, 1)
+	// 指针更新让未打开群的成员也能感知 seq 推进（与 MESSAGE_NEW 分开，便于客户端只刷新角标）
+	a.emitAccountEventMany(memberIDs, "GROUP_POINTER_UPDATE", map[string]any{
+		"group_id":  groupID,
+		"hint_type": "message",
+	}, 1)
 }
 
 func (a *API) handleGroupMessages(w http.ResponseWriter, r *http.Request) {
@@ -572,4 +582,9 @@ func (a *API) handleGroupRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
+	a.emitAccountEvent(claims.Subject, "GROUP_READ", map[string]any{
+		"group_id":   groupID,
+		"reader_uid": claims.UID,
+		"read_at":    time.Now().Unix(),
+	}, 1)
 }

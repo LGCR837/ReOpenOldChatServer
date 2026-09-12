@@ -172,6 +172,11 @@ func (a *API) handleGroupJoin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, groupJoinResponse{Status: "joined"})
+		a.emitAccountEvent(claims.Subject, "GROUP_POINTER_UPDATE", map[string]any{
+			"group_id":  groupID,
+			"hint_type": "joined",
+		}, 1)
+		a.emitGroupMembershipChange(ctx, groupID, claims.Subject)
 		return
 	}
 
@@ -266,15 +271,17 @@ func (a *API) handleGroupApprove(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 			return
 		}
-	} else {
-		if err := a.groupJoins.Deny(ctx, requestID); err != nil {
-			if err == data.ErrNotFound {
-				writeError(w, http.StatusNotFound, "request_not_found", "request not found")
-				return
-			}
-			writeError(w, http.StatusInternalServerError, "db_error", "internal error")
+		writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
+		a.emitGroupMembershipChange(ctx, joinReq.GroupID, joinReq.UserID)
+		return
+	}
+	if err := a.groupJoins.Deny(ctx, requestID); err != nil {
+		if err == data.ErrNotFound {
+			writeError(w, http.StatusNotFound, "request_not_found", "request not found")
 			return
 		}
+		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
+		return
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
@@ -341,6 +348,7 @@ func (a *API) handleGroupLeave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
+	a.emitGroupMembershipChange(ctx, groupID, claims.Subject)
 }
 
 func (a *API) handleGroupMessageDelete(w http.ResponseWriter, r *http.Request) {

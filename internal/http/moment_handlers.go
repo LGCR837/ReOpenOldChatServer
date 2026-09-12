@@ -141,6 +141,21 @@ func (a *API) handleMomentCreate(w http.ResponseWriter, r *http.Request) {
 		Liked:      false,
 	}
 	writeJSON(w, http.StatusCreated, resp)
+	a.emitMomentEventToFriends(ctx, claims.Subject, "MOMENT_NEW", map[string]any{
+		"moment_id":  id,
+		"from_uid":   claims.UID,
+		"from_ncuid": claims.NCUID,
+		"created_at": time.Now().Unix(),
+	})
+}
+
+// emitMomentEventToFriends 把朋友圈事件扇出给作者全部好友。好友列表为空时静默跳过。
+func (a *API) emitMomentEventToFriends(ctx context.Context, authorID, eventType string, payload any) {
+	friendIDs, err := a.friends.ListFriendIDs(ctx, authorID)
+	if err != nil {
+		return
+	}
+	a.emitAccountEventMany(friendIDs, eventType, payload, 1)
 }
 
 func (a *API) handleMomentFeed(w http.ResponseWriter, r *http.Request) {

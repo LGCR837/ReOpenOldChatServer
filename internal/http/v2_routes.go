@@ -14,6 +14,10 @@ func (api *API) registerV2Routes(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		r.Use(api.authMiddleware)
 
+		// ---- 事件差量 ----
+		r.Get("/updates/difference", api.handleUpdatesDifference)
+		r.Get("/groups/events/after", api.handleGroupEventsAfter)
+
 		// ---- 私聊 ----
 		r.Post("/direct/send", api.handleDirectSend)
 		r.Post("/direct/read", api.handleDirectRead)

@@ -89,7 +89,17 @@ func (a *API) handleGroupMessagesAfter(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	writeJSON(w, http.StatusOK, groupMessagesResponse{Messages: resp})
+	// server_group_seq 用消息总数表示；本轮取满 limit 说明后面大概率还有
+	serverSeq, err := a.groupMsgs.CountByGroup(ctx, groupID)
+	if err != nil {
+		serverSeq = 0
+	}
+	writeJSON(w, http.StatusOK, groupMessagesResponse{
+		Messages:       resp,
+		ServerGroupSeq: serverSeq,
+		HasMore:        len(msgs) == limit,
+		NextGroupSeq:   serverSeq,
+	})
 }
 
 // handleDirectMessagesAfter 私聊消息增量拉取。thread_id 可直接给，也可给 with_uid/with_ncuid 由服务端换算。

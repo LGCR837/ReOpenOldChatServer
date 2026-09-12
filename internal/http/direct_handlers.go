@@ -246,6 +246,7 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		a.wsHub.BroadcastToUser(targetUser.ID, payload)
 	}
+	a.emitAccountEvent(targetUser.ID, "DIRECT_MESSAGE_NEW", map[string]any{"message": resp}, 1)
 }
 
 func (a *API) handleDirectMessages(w http.ResponseWriter, r *http.Request) {
@@ -714,6 +715,12 @@ func (a *API) handleDirectRead(w http.ResponseWriter, r *http.Request) {
 	if payload, err := json.Marshal(env); err == nil {
 		a.wsHub.BroadcastToUser(targetUser.ID, payload)
 	}
+	a.emitAccountEvent(targetUser.ID, "DIRECT_READ", map[string]any{
+		"peer_uid":      currentUser.UID,
+		"peer_ncuid":    currentUser.NCUID,
+		"thread_id":     threadID,
+		"read_up_to_at": time.Now().Unix(),
+	}, 1)
 }
 
 func (a *API) handleDirectMessageDelete(w http.ResponseWriter, r *http.Request) {

@@ -196,6 +196,25 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_hash ON refresh_tokens (token_hash);
 
+-- 账号级事件流（pts 增量补差的数据源）
+CREATE TABLE IF NOT EXISTS account_updates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    pts INTEGER NOT NULL,
+    pts_count INTEGER NOT NULL DEFAULT 1,
+    event_type TEXT NOT NULL,
+    payload TEXT NOT NULL DEFAULT '{}',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_updates_user_pts ON account_updates (user_id, pts);
+
+-- pts 计数器，key = 'account:<user_id>'
+CREATE TABLE IF NOT EXISTS pts_state (
+    key TEXT PRIMARY KEY,
+    value INTEGER NOT NULL DEFAULT 0
+);
+
 -- System user
 INSERT OR IGNORE INTO users (id, uid, username, display_name, email, password_hash, created_at)
 VALUES ('SYSTEM', 'SYSTEM', '系统通知', '系统通知', 'system@localhost', '', CURRENT_TIMESTAMP);
