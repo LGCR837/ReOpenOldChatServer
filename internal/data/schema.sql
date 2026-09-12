@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS direct_messages (
     id VARCHAR(32) PRIMARY KEY,
     thread_id VARCHAR(32) NOT NULL REFERENCES direct_threads(id) ON DELETE CASCADE,
     sender_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    -- 冗余列：消息列表不 JOIN users，靠它直接吐 ncuid（不可变，uid 可被改掉）
+    sender_ncuid VARCHAR(32) NOT NULL DEFAULT '',
     body TEXT NOT NULL,
     msg_type TEXT NOT NULL DEFAULT 'text',
     media_url TEXT NOT NULL DEFAULT '',
@@ -96,6 +98,7 @@ CREATE TABLE IF NOT EXISTS group_messages (
     id VARCHAR(32) PRIMARY KEY,
     group_id VARCHAR(32) NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
     sender_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    sender_ncuid VARCHAR(32) NOT NULL DEFAULT '',
     body TEXT NOT NULL,
     msg_type TEXT NOT NULL DEFAULT 'text',
     media_url TEXT NOT NULL DEFAULT '',

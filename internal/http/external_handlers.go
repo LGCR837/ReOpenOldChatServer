@@ -282,14 +282,15 @@ func (a *API) handleExternalDirectSend(w http.ResponseWriter, r *http.Request) {
 	msgID := nanoid.New()
 
 	msg := &data.DirectMessage{
-		ID:         msgID,
-		ThreadID:   threadID,
-		SenderID:   user.ID,
-		Body:       body,
-		MsgType:    msgType,
-		MediaURL:   mediaURL,
-		ThumbURL:   thumbURL,
-		DurationMS: req.DurationMS,
+		ID:          msgID,
+		ThreadID:    threadID,
+		SenderID:    user.ID,
+		SenderNCUID: user.NCUID,
+		Body:        body,
+		MsgType:     msgType,
+		MediaURL:    mediaURL,
+		ThumbURL:    thumbURL,
+		DurationMS:  req.DurationMS,
 	}
 	if err := a.direct.CreateMessage(ctx, msg); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
@@ -300,6 +301,7 @@ func (a *API) handleExternalDirectSend(w http.ResponseWriter, r *http.Request) {
 		ID:         msgID,
 		ThreadID:   threadID,
 		FromUID:    user.UID,
+		FromNCUID:  user.NCUID,
 		Body:       body,
 		MsgType:    msgType,
 		MediaURL:   mediaURL,
@@ -419,14 +421,15 @@ func (a *API) handleExternalGroupSend(w http.ResponseWriter, r *http.Request) {
 	msgID := nanoid.New()
 
 	msg := &data.GroupMessage{
-		ID:         msgID,
-		GroupID:    groupID,
-		SenderID:   user.ID,
-		Body:       body,
-		MsgType:    msgType,
-		MediaURL:   mediaURL,
-		ThumbURL:   thumbURL,
-		DurationMS: req.DurationMS,
+		ID:          msgID,
+		GroupID:     groupID,
+		SenderID:    user.ID,
+		SenderNCUID: user.NCUID,
+		Body:        body,
+		MsgType:     msgType,
+		MediaURL:    mediaURL,
+		ThumbURL:    thumbURL,
+		DurationMS:  req.DurationMS,
 	}
 	if err := a.groupMsgs.Create(ctx, msg); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
@@ -437,6 +440,7 @@ func (a *API) handleExternalGroupSend(w http.ResponseWriter, r *http.Request) {
 		ID:         msgID,
 		GroupID:    groupID,
 		FromUID:    user.UID,
+		FromNCUID:  user.NCUID,
 		Body:       body,
 		MsgType:    msgType,
 		MediaURL:   mediaURL,

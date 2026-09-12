@@ -297,14 +297,14 @@ INSERT INTO red_packets (
 
 	if isGroup {
 		_, err = tx.ExecContext(ctx, `
-INSERT INTO group_messages (id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at)
+INSERT INTO group_messages (id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at)
 VALUES ($1, $2, $3, $4, $5, '', '', 0, CURRENT_TIMESTAMP)
-`, msgID, groupID, currentUser.ID, body, "red_packet")
+`, msgID, groupID, currentUser.ID, currentUser.NCUID, body, "red_packet")
 	} else {
 		_, err = tx.ExecContext(ctx, `
-INSERT INTO direct_messages (id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at)
+INSERT INTO direct_messages (id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at)
 VALUES ($1, $2, $3, $4, $5, '', '', 0, CURRENT_TIMESTAMP)
-`, msgID, threadID, currentUser.ID, body, "red_packet")
+`, msgID, threadID, currentUser.ID, currentUser.NCUID, body, "red_packet")
 	}
 	if err != nil {
 		_ = tx.Rollback()
@@ -322,6 +322,7 @@ VALUES ($1, $2, $3, $4, $5, '', '', 0, CURRENT_TIMESTAMP)
 			ID:        msgID,
 			GroupID:   groupID,
 			FromUID:   currentUser.UID,
+			FromNCUID: currentUser.NCUID,
 			Body:      body,
 			MsgType:   "red_packet",
 			CreatedAt: time.Now().Unix(),
@@ -353,6 +354,7 @@ VALUES ($1, $2, $3, $4, $5, '', '', 0, CURRENT_TIMESTAMP)
 		ID:        msgID,
 		ThreadID:  threadID,
 		FromUID:   currentUser.UID,
+		FromNCUID: currentUser.NCUID,
 		Body:      body,
 		MsgType:   "red_packet",
 		CreatedAt: time.Now().Unix(),

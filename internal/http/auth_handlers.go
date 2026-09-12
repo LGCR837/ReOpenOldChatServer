@@ -492,7 +492,7 @@ func (a *API) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := auth.NewAccessToken(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.Username, user.TokenVersion)
+	accessToken, err := auth.NewAccessToken(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.NCUID, user.Username, user.TokenVersion)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_failed", "internal error")
 		return

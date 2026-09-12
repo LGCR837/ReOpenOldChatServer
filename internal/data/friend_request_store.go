@@ -113,7 +113,7 @@ WHERE status = 0 AND created_at < $1
 func (s *FriendRequestStore) ListIncoming(ctx context.Context, toUserID string) ([]FriendRequestEntry, error) {
 	const q = `
 SELECT fr.id, fr.status, fr.created_at, fr.responded_at,
-       u.id AS from_user_id, u.uid AS from_uid, u.username AS from_username,
+       u.id AS from_user_id, u.uid AS from_uid, u.ncuid AS from_ncuid, u.username AS from_username,
        u.display_name AS from_display_name, u.user_title AS from_user_title, u.avatar_url AS from_avatar_url
 FROM friend_requests fr
 JOIN users u ON u.id = fr.from_user_id

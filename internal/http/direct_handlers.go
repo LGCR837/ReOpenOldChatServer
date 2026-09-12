@@ -17,6 +17,7 @@ const maxVoiceDurationMS = 60000
 
 type directSendRequest struct {
 	ToUID      string `json:"to_uid"`
+	ToNCUID    string `json:"to_ncuid"`
 	Body       string `json:"body"`
 	MsgType    string `json:"msg_type"`
 	MediaURL   string `json:"media_url"`
@@ -28,6 +29,7 @@ type directMessageResponse struct {
 	ID          string `json:"id"`
 	ThreadID    string `json:"thread_id"`
 	FromUID     string `json:"from_uid"`
+	FromNCUID   string `json:"from_ncuid"`
 	Body        string `json:"body"`
 	MsgType     string `json:"msg_type"`
 	MediaURL    string `json:"media_url,omitempty"`
@@ -51,7 +53,9 @@ type directUnreadMessageResponse struct {
 	ID          string `json:"id"`
 	ThreadID    string `json:"thread_id"`
 	FromUID     string `json:"from_uid"`
+	FromNCUID   string `json:"from_ncuid"`
 	PeerUID     string `json:"peer_uid"`
+	PeerNCUID   string `json:"peer_ncuid"`
 	Body        string `json:"body"`
 	MsgType     string `json:"msg_type"`
 	MediaURL    string `json:"media_url,omitempty"`
@@ -67,7 +71,8 @@ type directUnreadResponse struct {
 }
 
 type directReadRequest struct {
-	WithUID string `json:"with_uid"`
+	WithUID   string `json:"with_uid"`
+	WithNCUID string `json:"with_ncuid"`
 }
 
 func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +93,12 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	toUID := strings.ToUpper(strings.TrimSpace(req.ToUID))
+	toNCUID := strings.ToUpper(strings.TrimSpace(req.ToNCUID))
+	// ncuid 不可变、uid 可被改掉，两者都给时以 ncuid 为准
+	lookupKey, lookupByNCUID := toUID, false
+	if toNCUID != "" {
+		lookupKey, lookupByNCUID = toNCUID, true
+	}
 	body := strings.TrimSpace(req.Body)
 	msgType := strings.ToLower(strings.TrimSpace(req.MsgType))
 	if msgType == "" {
@@ -99,7 +110,7 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "resource_share_disabled", "resource share disabled")
 		return
 	}
-	if !isValidUID(toUID) {
+	if !isValidUID(lookupKey) {
 		writeError(w, http.StatusBadRequest, "invalid_uid", "invalid uid")
 		return
 	}
@@ -155,12 +166,17 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 		return
 	}
-	if currentUser.UID == toUID {
+	if lookupKey == currentUser.UID || (lookupByNCUID && lookupKey == currentUser.NCUID) {
 		writeError(w, http.StatusBadRequest, "invalid_uid", "cannot message yourself")
 		return
 	}
 
-	targetUser, err := a.users.GetByUID(ctx, toUID)
+	var targetUser *data.User
+	if lookupByNCUID {
+		targetUser, err = a.users.GetByNCUID(ctx, lookupKey)
+	} else {
+		targetUser, err = a.users.GetByUID(ctx, lookupKey)
+	}
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
@@ -198,14 +214,15 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 	msgID := nanoid.New()
 
 	msg := &data.DirectMessage{
-		ID:         msgID,
-		ThreadID:   threadID,
-		SenderID:   currentUser.ID,
-		Body:       body,
-		MsgType:    msgType,
-		MediaURL:   mediaURL,
-		ThumbURL:   thumbURL,
-		DurationMS: req.DurationMS,
+		ID:          msgID,
+		ThreadID:    threadID,
+		SenderID:    currentUser.ID,
+		SenderNCUID: currentUser.NCUID,
+		Body:        body,
+		MsgType:     msgType,
+		MediaURL:    mediaURL,
+		ThumbURL:    thumbURL,
+		DurationMS:  req.DurationMS,
 	}
 	if err := a.direct.CreateMessage(ctx, msg); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
@@ -216,6 +233,7 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 		ID:         msgID,
 		ThreadID:   threadID,
 		FromUID:    currentUser.UID,
+		FromNCUID:  currentUser.NCUID,
 		Body:       body,
 		MsgType:    msgType,
 		MediaURL:   mediaURL,
@@ -322,6 +340,7 @@ func (a *API) handleDirectMessages(w http.ResponseWriter, r *http.Request) {
 			ID:          msg.ID,
 			ThreadID:    msg.ThreadID,
 			FromUID:     fromUID,
+			FromNCUID:   msg.SenderNCUID,
 			Body:        msg.Body,
 			MsgType:     msgType,
 			MediaURL:    msg.MediaURL,
@@ -438,6 +457,7 @@ func (a *API) handleDirectMessagesV2(w http.ResponseWriter, r *http.Request) {
 			ID:          msg.ID,
 			ThreadID:    msg.ThreadID,
 			FromUID:     fromUID,
+			FromNCUID:   msg.SenderNCUID,
 			Body:        msg.Body,
 			MsgType:     msgType,
 			MediaURL:    msg.MediaURL,
@@ -545,6 +565,7 @@ func (a *API) handleDirectMessagesSearch(w http.ResponseWriter, r *http.Request)
 			ID:          msg.ID,
 			ThreadID:    msg.ThreadID,
 			FromUID:     fromUID,
+			FromNCUID:   msg.SenderNCUID,
 			Body:        msg.Body,
 			MsgType:     msgType,
 			MediaURL:    msg.MediaURL,
@@ -608,7 +629,9 @@ func (a *API) handleDirectUnread(w http.ResponseWriter, r *http.Request) {
 			ID:          msg.ID,
 			ThreadID:    msg.ThreadID,
 			FromUID:     msg.SenderUID,
+			FromNCUID:   msg.SenderNCUID,
 			PeerUID:     msg.PeerUID,
+			PeerNCUID:   msg.PeerNCUID,
 			Body:        msg.Body,
 			MsgType:     msgType,
 			MediaURL:    msg.MediaURL,
@@ -641,7 +664,12 @@ func (a *API) handleDirectRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	toUID := strings.ToUpper(strings.TrimSpace(req.WithUID))
-	if !isValidUID(toUID) {
+	toNCUID := strings.ToUpper(strings.TrimSpace(req.WithNCUID))
+	lookupKey, lookupByNCUID := toUID, false
+	if toNCUID != "" {
+		lookupKey, lookupByNCUID = toNCUID, true
+	}
+	if !isValidUID(lookupKey) {
 		writeError(w, http.StatusBadRequest, "invalid_uid", "invalid uid")
 		return
 	}
@@ -653,7 +681,12 @@ func (a *API) handleDirectRead(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 		return
 	}
-	targetUser, err := a.users.GetByUID(ctx, toUID)
+	var targetUser *data.User
+	if lookupByNCUID {
+		targetUser, err = a.users.GetByNCUID(ctx, lookupKey)
+	} else {
+		targetUser, err = a.users.GetByUID(ctx, lookupKey)
+	}
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")

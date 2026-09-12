@@ -9,24 +9,26 @@ import (
 
 type AccessClaims struct {
 	UID      string `json:"uid"`
+	NCUID    string `json:"ncuid"`
 	Username string `json:"username"`
 	Version  int    `json:"ver"`
 	jwt.RegisteredClaims
 }
 
-func NewAccessToken(secret []byte, issuer string, ttl time.Duration, subject, uid, username string, version int) (string, error) {
+func NewAccessToken(secret []byte, issuer string, ttl time.Duration, subject, uid, ncuid, username string, version int) (string, error) {
 	jti := nanoid.New()
 
 	now := time.Now()
 	claims := AccessClaims{
 		UID:      uid,
+		NCUID:    ncuid,
 		Username: username,
 		Version:  version,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    issuer,
-			Subject:   subject,
-			IssuedAt:  jwt.NewNumericDate(now),
-			ID:        jti,
+			Issuer:   issuer,
+			Subject:  subject,
+			IssuedAt: jwt.NewNumericDate(now),
+			ID:       jti,
 		},
 	}
 	if ttl > 0 {

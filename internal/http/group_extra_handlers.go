@@ -151,6 +151,7 @@ func (a *API) handleGroupMembers(w http.ResponseWriter, r *http.Request) {
 	for _, m := range members {
 		resp.Members = append(resp.Members, groupMemberItem{
 			UID:         m.UID,
+			NCUID:       m.NCUID,
 			Username:    m.Username,
 			DisplayName: m.DisplayName,
 			UserTitle:   m.UserTitle,

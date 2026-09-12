@@ -312,7 +312,7 @@ LIMIT $1`
 
 func (s *GroupStore) ListMembers(ctx context.Context, groupID string) ([]GroupMemberEntry, error) {
 	const q = `
-SELECT u.id, u.uid, u.username, u.display_name, u.user_title, u.avatar_url, gm.role, gm.joined_at
+SELECT u.id, u.uid, u.ncuid, u.username, u.display_name, u.user_title, u.avatar_url, gm.role, gm.joined_at
 FROM group_members gm
 JOIN users u ON u.id = gm.user_id
 WHERE gm.group_id = $1

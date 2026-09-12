@@ -124,6 +124,24 @@ LIMIT 1`
 	return &u, nil
 }
 
+func (s *UserStore) GetByNCUID(ctx context.Context, ncuid string) (*User, error) {
+	const q = `
+SELECT id, uid, ncuid, uid_changed_at, email, username, display_name, user_title, user_title_price, avatar_url, signature, cover_url, password_hash, token_version, coin_balance, reputation_score, created_at, updated_at
+FROM users
+WHERE ncuid = $1
+LIMIT 1`
+
+	var u User
+	if err := s.db.GetContext(ctx, &u, q, ncuid); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &u, nil
+}
+
 func (s *UserStore) UpdateUID(ctx context.Context, id, newUID string, cutoff time.Time) error {
 	res, err := s.db.ExecContext(ctx, `
 UPDATE users

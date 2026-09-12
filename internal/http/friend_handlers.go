@@ -12,7 +12,8 @@ import (
 )
 
 type friendRequestRequest struct {
-	ToUID string `json:"to_uid"`
+	ToUID   string `json:"to_uid"`
+	ToNCUID string `json:"to_ncuid"`
 }
 
 type friendRequestResponse struct {
@@ -44,6 +45,7 @@ type friendRequestItem struct {
 	ID              string `json:"id"`
 	Status          int16  `json:"status"`
 	FromUID         string `json:"from_uid"`
+	FromNCUID       string `json:"from_ncuid"`
 	FromUsername    string `json:"from_username"`
 	FromDisplayName string `json:"from_display_name"`
 	FromTitle       string `json:"from_title"`
@@ -72,7 +74,12 @@ func (a *API) handleFriendRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	toUID := strings.ToUpper(strings.TrimSpace(req.ToUID))
-	if !isValidUID(toUID) {
+	toNCUID := strings.ToUpper(strings.TrimSpace(req.ToNCUID))
+	lookupKey, lookupByNCUID := toUID, false
+	if toNCUID != "" {
+		lookupKey, lookupByNCUID = toNCUID, true
+	}
+	if !isValidUID(lookupKey) {
 		writeError(w, http.StatusBadRequest, "invalid_uid", "invalid uid")
 		return
 	}
@@ -89,12 +96,17 @@ func (a *API) handleFriendRequest(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
 		return
 	}
-	if currentUser.UID == toUID {
+	if lookupKey == currentUser.UID || (lookupByNCUID && lookupKey == currentUser.NCUID) {
 		writeError(w, http.StatusBadRequest, "invalid_uid", "cannot friend yourself")
 		return
 	}
 
-	targetUser, err := a.users.GetByUID(ctx, toUID)
+	var targetUser *data.User
+	if lookupByNCUID {
+		targetUser, err = a.users.GetByNCUID(ctx, lookupKey)
+	} else {
+		targetUser, err = a.users.GetByUID(ctx, lookupKey)
+	}
 	if err != nil {
 		if err == data.ErrNotFound {
 			writeError(w, http.StatusNotFound, "user_not_found", "user not found")
@@ -202,6 +214,7 @@ func (a *API) handleFriendRequests(w http.ResponseWriter, r *http.Request) {
 			ID:              req.ID,
 			Status:          req.Status,
 			FromUID:         req.FromUID,
+			FromNCUID:       req.FromNCUID,
 			FromUsername:    req.FromUsername,
 			FromDisplayName: req.FromDisplayName,
 			FromTitle:       req.FromTitle,

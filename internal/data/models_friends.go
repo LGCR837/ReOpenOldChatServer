@@ -28,6 +28,7 @@ type FriendRequestEntry struct {
 	Status          int16      `db:"status"`
 	FromUserID      string     `db:"from_user_id"`
 	FromUID         string     `db:"from_uid"`
+	FromNCUID       string     `db:"from_ncuid"`
 	FromUsername    string     `db:"from_username"`
 	FromDisplayName string     `db:"from_display_name"`
 	FromAvatarURL   string     `db:"from_avatar_url"`

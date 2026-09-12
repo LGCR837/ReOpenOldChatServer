@@ -9,28 +9,30 @@ import (
 )
 
 type GroupMessage struct {
-	ID         string    `db:"id"`
-	GroupID    string    `db:"group_id"`
-	SenderID   string    `db:"sender_id"`
-	Body       string    `db:"body"`
-	MsgType    string    `db:"msg_type"`
-	MediaURL   string    `db:"media_url"`
-	ThumbURL   string    `db:"thumb_url"`
-	DurationMS int       `db:"duration_ms"`
-	Created    time.Time `db:"created_at"`
+	ID          string    `db:"id"`
+	GroupID     string    `db:"group_id"`
+	SenderID    string    `db:"sender_id"`
+	SenderNCUID string    `db:"sender_ncuid"`
+	Body        string    `db:"body"`
+	MsgType     string    `db:"msg_type"`
+	MediaURL    string    `db:"media_url"`
+	ThumbURL    string    `db:"thumb_url"`
+	DurationMS  int       `db:"duration_ms"`
+	Created     time.Time `db:"created_at"`
 }
 
 type UnreadGroupMessage struct {
-	ID         string    `db:"id"`
-	GroupID    string    `db:"group_id"`
-	SenderID   string    `db:"sender_id"`
-	SenderUID  string    `db:"sender_uid"`
-	Body       string    `db:"body"`
-	MsgType    string    `db:"msg_type"`
-	MediaURL   string    `db:"media_url"`
-	ThumbURL   string    `db:"thumb_url"`
-	DurationMS int       `db:"duration_ms"`
-	Created    time.Time `db:"created_at"`
+	ID          string    `db:"id"`
+	GroupID     string    `db:"group_id"`
+	SenderID    string    `db:"sender_id"`
+	SenderUID   string    `db:"sender_uid"`
+	SenderNCUID string    `db:"sender_ncuid"`
+	Body        string    `db:"body"`
+	MsgType     string    `db:"msg_type"`
+	MediaURL    string    `db:"media_url"`
+	ThumbURL    string    `db:"thumb_url"`
+	DurationMS  int       `db:"duration_ms"`
+	Created     time.Time `db:"created_at"`
 }
 
 type GroupMessageStore struct {
@@ -43,8 +45,8 @@ func NewGroupMessageStore(db *sqlx.DB) *GroupMessageStore {
 
 func (s *GroupMessageStore) Create(ctx context.Context, m *GroupMessage) error {
 	const q = `
-INSERT INTO group_messages (id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at)
-VALUES (:id, :group_id, :sender_id, :body, :msg_type, :media_url, :thumb_url, :duration_ms, CURRENT_TIMESTAMP)`
+INSERT INTO group_messages (id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at)
+VALUES (:id, :group_id, :sender_id, :sender_ncuid, :body, :msg_type, :media_url, :thumb_url, :duration_ms, CURRENT_TIMESTAMP)`
 
 	_, err := s.db.NamedExecContext(ctx, q, m)
 	return err
@@ -53,7 +55,7 @@ VALUES (:id, :group_id, :sender_id, :body, :msg_type, :media_url, :thumb_url, :d
 func (s *GroupMessageStore) GetByID(ctx context.Context, messageID string) (*GroupMessage, error) {
 	var m GroupMessage
 	err := s.db.GetContext(ctx, &m, `
-SELECT id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
 FROM group_messages
 WHERE id = $1
 LIMIT 1`, messageID)
@@ -75,7 +77,7 @@ func (s *GroupMessageStore) ListByGroup(ctx context.Context, groupID string, lim
 	}
 
 	const q = `
-SELECT id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
 FROM group_messages
 WHERE group_id = $1 AND created_at < $2
 ORDER BY created_at DESC, id DESC
@@ -136,7 +138,7 @@ func (s *GroupMessageStore) ListByGroupWithOffset(ctx context.Context, groupID s
 	}
 
 	const q = `
-SELECT id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
 FROM group_messages
 WHERE group_id = $1
 ORDER BY created_at DESC, id DESC
@@ -161,7 +163,7 @@ func (s *GroupMessageStore) SearchByGroupWithOffset(ctx context.Context, groupID
 	var msgs []GroupMessage
 	if kind == "text" {
 		const qText = `
-SELECT id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
 FROM group_messages
 WHERE group_id = $1 AND (body LIKE $2 OR media_url LIKE $2) AND msg_type = 'text'
 ORDER BY created_at DESC, id DESC
@@ -173,7 +175,7 @@ LIMIT $3 OFFSET $4`
 	}
 	if kind == "media" {
 		const qMedia = `
-SELECT id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
 FROM group_messages
 WHERE group_id = $1 AND (body LIKE $2 OR media_url LIKE $2)
   AND msg_type IN ('image', 'video', 'voice', 'resource')
@@ -186,7 +188,7 @@ LIMIT $3 OFFSET $4`
 	}
 
 	const qAll = `
-SELECT id, group_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
 FROM group_messages
 WHERE group_id = $1 AND (body LIKE $2 OR media_url LIKE $2)
 ORDER BY created_at DESC, id DESC
@@ -247,7 +249,7 @@ func (s *GroupMessageStore) ListUnreadByUser(ctx context.Context, userID string,
 		limit = 50
 	}
 	const q = `
-SELECT gm.id, gm.group_id, gm.sender_id, su.uid AS sender_uid,
+SELECT gm.id, gm.group_id, gm.sender_id, su.uid AS sender_uid, su.ncuid AS sender_ncuid,
        gm.body, gm.msg_type, gm.media_url, gm.thumb_url, gm.duration_ms, gm.created_at
 FROM group_messages gm
 JOIN group_members m ON m.group_id = gm.group_id

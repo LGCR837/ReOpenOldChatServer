@@ -25,6 +25,7 @@ type groupMessageResponse struct {
 	ID         string `json:"id"`
 	GroupID    string `json:"group_id"`
 	FromUID    string `json:"from_uid"`
+	FromNCUID  string `json:"from_ncuid"`
 	Body       string `json:"body"`
 	MsgType    string `json:"msg_type"`
 	MediaURL   string `json:"media_url,omitempty"`
@@ -50,6 +51,7 @@ type groupUnreadMessageResponse struct {
 	ID         string `json:"id"`
 	GroupID    string `json:"group_id"`
 	FromUID    string `json:"from_uid"`
+	FromNCUID  string `json:"from_ncuid"`
 	Body       string `json:"body"`
 	MsgType    string `json:"msg_type"`
 	MediaURL   string `json:"media_url,omitempty"`
@@ -165,14 +167,15 @@ func (a *API) handleGroupMessageSend(w http.ResponseWriter, r *http.Request) {
 	msgID := nanoid.New()
 
 	msg := &data.GroupMessage{
-		ID:         msgID,
-		GroupID:    groupID,
-		SenderID:   claims.Subject,
-		Body:       body,
-		MsgType:    msgType,
-		MediaURL:   mediaURL,
-		ThumbURL:   thumbURL,
-		DurationMS: req.DurationMS,
+		ID:          msgID,
+		GroupID:     groupID,
+		SenderID:    claims.Subject,
+		SenderNCUID: claims.NCUID,
+		Body:        body,
+		MsgType:     msgType,
+		MediaURL:    mediaURL,
+		ThumbURL:    thumbURL,
+		DurationMS:  req.DurationMS,
 	}
 	if err := a.groupMsgs.Create(ctx, msg); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
@@ -183,6 +186,7 @@ func (a *API) handleGroupMessageSend(w http.ResponseWriter, r *http.Request) {
 		ID:         msgID,
 		GroupID:    groupID,
 		FromUID:    claims.UID,
+		FromNCUID:  claims.NCUID,
 		Body:       body,
 		MsgType:    msgType,
 		MediaURL:   mediaURL,
@@ -278,6 +282,7 @@ func (a *API) handleGroupMessages(w http.ResponseWriter, r *http.Request) {
 			ID:         msg.ID,
 			GroupID:    msg.GroupID,
 			FromUID:    fromUID,
+			FromNCUID:  msg.SenderNCUID,
 			Body:       msg.Body,
 			MsgType:    msgType,
 			MediaURL:   msg.MediaURL,
@@ -374,6 +379,7 @@ func (a *API) handleGroupMessagesV2(w http.ResponseWriter, r *http.Request) {
 			ID:         msg.ID,
 			GroupID:    msg.GroupID,
 			FromUID:    fromUID,
+			FromNCUID:  msg.SenderNCUID,
 			Body:       msg.Body,
 			MsgType:    msgType,
 			MediaURL:   msg.MediaURL,
@@ -463,6 +469,7 @@ func (a *API) handleGroupMessagesSearch(w http.ResponseWriter, r *http.Request) 
 			ID:         msg.ID,
 			GroupID:    msg.GroupID,
 			FromUID:    fromUID,
+			FromNCUID:  msg.SenderNCUID,
 			Body:       msg.Body,
 			MsgType:    msgType,
 			MediaURL:   msg.MediaURL,
@@ -512,6 +519,7 @@ func (a *API) handleGroupUnread(w http.ResponseWriter, r *http.Request) {
 			ID:         msg.ID,
 			GroupID:    msg.GroupID,
 			FromUID:    msg.SenderUID,
+			FromNCUID:  msg.SenderNCUID,
 			Body:       msg.Body,
 			MsgType:    msgType,
 			MediaURL:   msg.MediaURL,

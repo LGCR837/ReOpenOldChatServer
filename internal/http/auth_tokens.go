@@ -20,7 +20,7 @@ func (a *API) issueTokens(ctx context.Context, user *data.User) (tokenPair, erro
 	if user != nil {
 		version = user.TokenVersion
 	}
-	accessToken, err := auth.NewAccessToken(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.Username, version)
+	accessToken, err := auth.NewAccessToken(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.NCUID, user.Username, version)
 	if err != nil {
 		return tokenPair{}, err
 	}

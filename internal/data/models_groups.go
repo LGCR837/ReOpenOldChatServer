@@ -52,6 +52,7 @@ type GroupSummary struct {
 type GroupMemberEntry struct {
 	ID          string    `db:"id"`
 	UID         string    `db:"uid"`
+	NCUID       string    `db:"ncuid"`
 	Username    string    `db:"username"`
 	DisplayName string    `db:"display_name"`
 	UserTitle   string    `db:"user_title"`

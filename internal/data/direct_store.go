@@ -20,6 +20,7 @@ type DirectMessage struct {
 	ID          string     `db:"id"`
 	ThreadID    string     `db:"thread_id"`
 	SenderID    string     `db:"sender_id"`
+	SenderNCUID string     `db:"sender_ncuid"`
 	Body        string     `db:"body"`
 	MsgType     string     `db:"msg_type"`
 	MediaURL    string     `db:"media_url"`
@@ -35,7 +36,9 @@ type UnreadDirectMessage struct {
 	ThreadID    string     `db:"thread_id"`
 	SenderID    string     `db:"sender_id"`
 	SenderUID   string     `db:"sender_uid"`
+	SenderNCUID string     `db:"sender_ncuid"`
 	PeerUID     string     `db:"peer_uid"`
+	PeerNCUID   string     `db:"peer_ncuid"`
 	Body        string     `db:"body"`
 	MsgType     string     `db:"msg_type"`
 	MediaURL    string     `db:"media_url"`
@@ -120,8 +123,8 @@ ON CONFLICT DO NOTHING
 
 func (s *DirectStore) CreateMessage(ctx context.Context, m *DirectMessage) error {
 	const q = `
-INSERT INTO direct_messages (id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at)
-VALUES (:id, :thread_id, :sender_id, :body, :msg_type, :media_url, :thumb_url, :duration_ms, CURRENT_TIMESTAMP, NULL, NULL)`
+INSERT INTO direct_messages (id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at)
+VALUES (:id, :thread_id, :sender_id, :sender_ncuid, :body, :msg_type, :media_url, :thumb_url, :duration_ms, CURRENT_TIMESTAMP, NULL, NULL)`
 
 	_, err := s.db.NamedExecContext(ctx, q, m)
 	return err
@@ -130,7 +133,7 @@ VALUES (:id, :thread_id, :sender_id, :body, :msg_type, :media_url, :thumb_url, :
 func (s *DirectStore) GetMessageByID(ctx context.Context, messageID string) (*DirectMessage, error) {
 	var m DirectMessage
 	err := s.db.GetContext(ctx, &m, `
-SELECT id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
+SELECT id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
 FROM direct_messages
 WHERE id = $1
 LIMIT 1`, messageID)
@@ -152,7 +155,7 @@ func (s *DirectStore) ListMessages(ctx context.Context, threadID string, limit i
 	}
 
 	const q = `
-SELECT id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
+SELECT id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
 FROM direct_messages
 WHERE thread_id = $1 AND created_at < $2
 ORDER BY created_at DESC, id DESC
@@ -196,8 +199,9 @@ func (s *DirectStore) ListUnreadByUser(ctx context.Context, userID string, limit
 		limit = 50
 	}
 	const q = `
-SELECT dm.id, dm.thread_id, dm.sender_id, su.uid AS sender_uid,
+SELECT dm.id, dm.thread_id, dm.sender_id, su.uid AS sender_uid, su.ncuid AS sender_ncuid,
        CASE WHEN dt.user_a_id = $1 THEN ub.uid ELSE ua.uid END AS peer_uid,
+       CASE WHEN dt.user_a_id = $1 THEN ub.ncuid ELSE ua.ncuid END AS peer_ncuid,
        dm.body, dm.msg_type, dm.media_url, dm.thumb_url, dm.duration_ms,
        dm.created_at, dm.delivered_at, dm.read_at
 FROM direct_messages dm
@@ -260,7 +264,7 @@ func (s *DirectStore) ListMessagesWithOffset(ctx context.Context, threadID strin
 	}
 
 	const q = `
-SELECT id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
+SELECT id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
 FROM direct_messages
 WHERE thread_id = $1
 ORDER BY created_at DESC, id DESC
@@ -285,7 +289,7 @@ func (s *DirectStore) SearchMessagesWithOffset(ctx context.Context, threadID, ke
 	var msgs []DirectMessage
 	if kind == "text" {
 		const qText = `
-SELECT id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
+SELECT id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
 FROM direct_messages
 WHERE thread_id = $1 AND (body LIKE $2 OR media_url LIKE $2) AND msg_type = 'text'
 ORDER BY created_at DESC, id DESC
@@ -297,7 +301,7 @@ LIMIT $3 OFFSET $4`
 	}
 	if kind == "media" {
 		const qMedia = `
-SELECT id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
+SELECT id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
 FROM direct_messages
 WHERE thread_id = $1 AND (body LIKE $2 OR media_url LIKE $2)
   AND msg_type IN ('image', 'video', 'voice', 'resource')
@@ -310,7 +314,7 @@ LIMIT $3 OFFSET $4`
 	}
 
 	const qAll = `
-SELECT id, thread_id, sender_id, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
+SELECT id, thread_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at, delivered_at, read_at
 FROM direct_messages
 WHERE thread_id = $1 AND (body LIKE $2 OR media_url LIKE $2)
 ORDER BY created_at DESC, id DESC
