@@ -1,1 +1,197 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>ReOpenOldChat</title><style>:root{color-scheme:light;--bg:#f5f5f5;--card:#ffffff;--text:#1f1f1f;--muted:#8c8c8c;--accent:#6FACC9}body{margin:0;font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;background:radial-gradient(1200px 800px at 80% -10%,#e0f0f7,var(--bg));color:var(--text)}.wrap{max-width:920px;margin:0 auto;padding:48px 20px 64px}.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;align-items:center}.title{font-size:36px;margin:0 0 12px;letter-spacing:1px}.desc{font-size:16px;line-height:1.8;color:var(--muted);margin:0 0 20px}.card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,0.08)}.btn{display:inline-block;background:var(--accent);color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600}.btn[disabled]{opacity:0.5;pointer-events:none}.meta{margin-top:14px;font-size:13px;color:var(--muted)}ul{margin:0;padding-left:18px;color:var(--muted);line-height:1.8}.badge{display:inline-block;background:#d4eaf2;color:#3a7d8c;padding:4px 10px;border-radius:999px;font-size:12px;margin-bottom:12px}.btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.btn.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent)}</style></head><body><div class="wrap"><section class="hero"><div><div class="badge">聊天应用</div><h1 class="title">ReOpenOldChat</h1><p class="desc">ReOpenOldChat 是 OldChat 服务器端的开源重制版，兼容原版客户端（最低 Android 2.3.3）。</p><div class="btn-group"><a class="btn" href="#">立即下载</a><a class="btn secondary" href="/shop">称号商店</a><a class="btn secondary" href="/app">网页版</a></div><div class="meta">最新版本：未知（未知）</div></div></section></div></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ReOpenOldChat —— 轻量、可靠、兼容 Android 2.3 及以上版本的即时通讯系统。">
+  <title>ReOpenOldChat</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", "DejaVu Sans", "Lucida Grande", "Noto Sans SC", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #111;
+      background: #fdfdfd;
+    }
+    a { color: #004488; text-decoration: underline; }
+    a:hover { color: #002244; }
+    .layout-wrapper { display: flex; min-height: 100vh; }
+
+    .mobile-nav-bar { display: none; }
+
+    .sidebar {
+      width: 250px;
+      min-width: 250px;
+      background: #f0f2f5;
+      border-right: 1px solid #d0d4dc;
+      padding: 18px 14px;
+      font-size: 13px;
+    }
+    .sidebar-section { margin-bottom: 20px; }
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: #495057;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #d0d4dc;
+      padding-bottom: 3px;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-list { list-style: none; padding-left: 0; }
+    .sidebar-list li { margin: 5px 0; }
+    .sidebar-list li::before { content: "» "; color: #8c98a4; }
+    .sidebar-list a { text-decoration: none; color: #004488; }
+    .sidebar-list a:hover { text-decoration: underline; }
+    .sidebar-list a.highlight { font-weight: bold; color: #b02a37; }
+    .sidebar-list a.current { font-weight: bold; color: #212529; }
+
+    .content {
+      flex: 1;
+      max-width: 860px;
+      padding: 24px 32px;
+    }
+    .ascii-logo {
+      font-family: "DejaVu Sans Mono", "Consolas", "Courier New", monospace;
+      font-size: 11px;
+      line-height: 1.15;
+      color: #2b5b84;
+      white-space: pre;
+      margin-bottom: 12px;
+      user-select: none;
+    }
+    h1 { font-size: 24px; font-weight: bold; margin: 0 0 4px; color: #111; border-bottom: 2px solid #2b5b84; padding-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #495057; margin-bottom: 14px; }
+    h2 { font-size: 16px; font-weight: bold; margin: 22px 0 8px; border-bottom: 1px solid #d0d4dc; padding-bottom: 4px; color: #212529; }
+    p { margin-bottom: 10px; }
+
+    .btn-pill {
+      display: inline-block;
+      background: #e7f1ff;
+      border: 1px solid #b6d4fe;
+      padding: 7px 14px;
+      font-weight: bold;
+      font-size: 13px;
+      margin: 4px 6px 4px 0;
+      text-decoration: none;
+      color: #0d6efd;
+    }
+    .btn-pill:hover { background: #cfe2ff; text-decoration: none; }
+    .btn-pill.primary { background: #2b5b84; color: #fff; border-color: #1f4261; }
+    .btn-pill.primary:hover { background: #224869; }
+
+    @media (max-width: 768px) {
+      .layout-wrapper { flex-direction: column; }
+      .mobile-nav-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        background: #f0f2f5;
+        border-bottom: 1px solid #d0d4dc;
+      }
+      .mobile-toggle-btn {
+        background: #fff;
+        border: 1px solid #ced4da;
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: bold;
+        color: #004488;
+        cursor: pointer;
+      }
+      .sidebar {
+        width: 100%;
+        min-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #d0d4dc;
+        display: none;
+      }
+      .sidebar.open { display: block; }
+      .content { padding: 18px 14px; }
+      .ascii-logo { font-size: 8px; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout-wrapper">
+
+  <div class="mobile-nav-bar">
+    <button class="mobile-toggle-btn" id="sidebarToggle" type="button">☰ 导航菜单</button>
+  </div>
+
+  <div class="sidebar" id="mainSidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">快捷导航</div>
+      <ul class="sidebar-list">
+        <li><a href="/" class="current">官网主页</a></li>
+        <li><a href="/shop">称号商店</a></li>
+        <li><a href="/update/">下载客户端</a></li>
+        <li><a href="/app">网页版</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">在线服务</div>
+      <ul class="sidebar-list">
+        <li><a href="/app">网页聊天</a></li>
+        <li><a href="/app/login">账号登录</a></li>
+        <li><a href="/igotbanned">封禁申诉</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="ascii-logo">
+  ____       ___                  ____  _ _     ____ _           _
+ |  _ \ ___ / _ \ _ __   ___ _ __ / _ \| | |   / ___| |__   __ _| |_
+ | |_) / _ \ | | | '_ \ / _ \ '_ \ | | | | |  | |   | '_ \ / _` | __|
+ |  _ <  __/ |_| | |_) |  __/ | | | |_| | | | | |___| | | | (_| | |_
+ |_| \_\___|\___/| .__/ \___|_| |_|\___/|_|_|  \____|_| |_|\__,_|\__|
+                 |_|
+    </div>
+
+    <h1>ReOpenOldChat</h1>
+    <div class="subtitle">OldChat 服务端开源重制版 / 兼容 Android 2.3+</div>
+
+    <p>轻量可靠的即时通讯应用：私聊、群聊、语音、图片、动态等，兼容旧设备。</p>
+
+    <h2>客户端下载</h2>
+    <p>客户端与更新包统一放在下载中心，按平台与版本获取。</p>
+    <div style="margin: 12px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+      <a class="btn-pill primary" href="/update/">前往客户端下载中心</a>
+    </div>
+
+    <h2>快速开始</h2>
+    <div style="margin: 12px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+      <a class="btn-pill" href="/app">打开网页版</a>
+      <a class="btn-pill" href="/app/login">登录已有账号</a>
+      <a class="btn-pill" href="/shop">称号商店</a>
+    </div>
+
+    <h2>帮助与支持</h2>
+    <div style="margin: 12px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+      <a class="btn-pill" href="/igotbanned">账号封禁申诉</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var btn = document.getElementById('sidebarToggle');
+    var sidebar = document.getElementById('mainSidebar');
+    if (btn && sidebar) {
+      btn.onclick = function() {
+        var isOpen = sidebar.className.indexOf('open') !== -1;
+        if (isOpen) {
+          sidebar.className = sidebar.className.replace(/\bopen\b/g, '').trim();
+          btn.textContent = '☰ 导航菜单';
+        } else {
+          sidebar.className = (sidebar.className + ' open').trim();
+          btn.textContent = '✕ 收起菜单';
+        }
+      };
+    }
+  })();
+</script>
+</body>
+</html>
