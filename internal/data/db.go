@@ -288,6 +288,20 @@ CREATE TABLE IF NOT EXISTS user_login_devices (
 	_, _ = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_login_device_pair ON user_login_devices (user_id, device_id)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_user_login_devices_user ON user_login_devices (user_id)`)
 	_ = addColumnIfMissing(db, "group_members", "last_read_at", "DATETIME NULL")
+	// 群邀请：目标用户开了「拒绝群邀请」偏好时，invite 不再直接加人而是落一条待处理邀请
+	_, _ = db.Exec(`
+CREATE TABLE IF NOT EXISTS group_invitations (
+    id VARCHAR(32) PRIMARY KEY,
+    group_id VARCHAR(32) NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    inviter_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    invitee_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    responded_at DATETIME NULL
+)`)
+	// 部分唯一索引：同一群对同一人同时只允许一条待处理邀请（已响应的可再邀）
+	_, _ = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_group_invitations_pending ON group_invitations (group_id, invitee_id) WHERE status = 'pending'`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_group_invitations_invitee ON group_invitations (invitee_id, status, created_at DESC)`)
 	_, _ = db.Exec(`
 CREATE TABLE IF NOT EXISTS banned_devices (
     device_id VARCHAR(128) PRIMARY KEY,

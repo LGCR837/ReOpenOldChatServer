@@ -237,6 +237,30 @@ func (a *API) handleGroupInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 目标用户开了「拒绝群邀请」偏好：不直接拉人，改为落一条待处理邀请由其本人决定。
+	// 默认偏好为 0，因此既有客户端行为不变（仍是直接入群）。
+	rejectInvites, err := a.users.GroupInviteReject(ctx, targetUser.ID)
+	if err != nil && err != data.ErrNotFound {
+		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
+		return
+	}
+	if rejectInvites {
+		invitationID, created, err := a.groups.CreateInvitation(ctx, groupID, claims.Subject, targetUser.ID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "db_error", "internal error")
+			return
+		}
+		if !created {
+			writeError(w, http.StatusConflict, "already_invited", "invitation already pending")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"status":        "pending",
+			"invitation_id": invitationID,
+		})
+		return
+	}
+
 	added, err := a.groups.AddMemberIfAbsent(ctx, groupID, targetUser.ID, data.GroupRoleMember)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
