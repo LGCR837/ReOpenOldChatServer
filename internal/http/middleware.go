@@ -149,6 +149,7 @@ func shouldSkipGzipPath(path string) bool {
 	lower := strings.ToLower(path)
 	return strings.HasPrefix(lower, "/uploads/") ||
 		strings.HasPrefix(lower, "/v1/uploads/") ||
+		strings.HasPrefix(lower, "/v2/uploads/") ||
 		strings.HasPrefix(lower, "/update/") ||
 		strings.HasPrefix(lower, "/landing-assets/") ||
 		strings.HasPrefix(lower, "/v1/music/cover/") ||

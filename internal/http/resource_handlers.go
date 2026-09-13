@@ -255,13 +255,23 @@ func (a *API) handleResourceSectionDelete(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})
 }
 
+// handleResourceUpload 资源广场上传（v1，上限 100MiB）。
 func (a *API) handleResourceUpload(w http.ResponseWriter, r *http.Request) {
+	a.resourceUpload(w, r, maxResourceUploadBytes)
+}
+
+// handleResourceUploadV2 资源广场上传（v2，官方上限 500MiB）。
+func (a *API) handleResourceUploadV2(w http.ResponseWriter, r *http.Request) {
+	a.resourceUpload(w, r, maxFileUploadBytes)
+}
+
+func (a *API) resourceUpload(w http.ResponseWriter, r *http.Request, maxBytes int64) {
 	claims, ok := claimsFromContext(r.Context())
 	if !ok {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "unauthorized")
 		return
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxResourceUploadBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 	limitUploadBody(r)
 	if err := r.ParseMultipartForm(2 << 20); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_upload", "invalid upload")
@@ -321,7 +331,7 @@ func (a *API) handleResourceUpload(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "upload_failed", "upload failed")
 		return
 	}
-	if written <= 0 || written > maxResourceUploadBytes {
+	if written <= 0 || written > maxBytes {
 		_ = os.Remove(path)
 		writeError(w, http.StatusBadRequest, "invalid_size", "invalid size")
 		return

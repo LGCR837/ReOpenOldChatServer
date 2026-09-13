@@ -46,6 +46,7 @@ type API struct {
 	bugReportStore    *data.BugReportStore
 	notifications     *data.NotificationStore
 	updates           *data.UpdateStore
+	fileAssets        *data.FileAssetStore
 	titles            *data.TitleCatalogStore
 	wsHub             *ws.Hub
 	sessions          *secure.SessionStore
@@ -96,6 +97,7 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 		bugReportStore:    data.NewBugReportStore(db),
 		notifications:     data.NewNotificationStore(db),
 		updates:           data.NewUpdateStore(db),
+		fileAssets:        data.NewFileAssetStore(db),
 		titles:            data.NewTitleCatalogStore(db),
 		wsHub:             ws.NewHub(),
 		sessions:          secure.NewSessionStore(),
@@ -243,6 +245,13 @@ func (api *API) registerV1Routes(r chi.Router) {
 		r.Post("/me/avatar", api.handleAvatarUpload)
 		r.Post("/me/cover", api.handleCoverUpload)
 		r.Post("/media", api.handleMediaUpload)
+		r.Post("/files/check", api.handleFileCheck)
+		r.Post("/files/upload", api.handleFileUpload)
+		r.Get("/files/download/{fileID}", api.handleFileDownload)
+		r.Head("/files/download/{fileID}", api.handleFileDownload)
+		r.Post("/resources/upload", api.handleResourceUpload)
+		r.Get("/resources/download/{itemID}", api.handleResourceDownload)
+		r.Head("/resources/download/{itemID}", api.handleResourceDownload)
 		r.Get("/users/profile", api.handleUserProfile)
 		r.Get("/friends", api.handleFriendList)
 		r.Get("/friends/requests", api.handleFriendRequests)

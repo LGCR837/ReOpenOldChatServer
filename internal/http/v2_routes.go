@@ -140,6 +140,17 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Get("/moments/v2", api.handleMomentFeedV2)
 		r.Get("/moments/user", api.handleMomentUserFeed)
 
+		// ---- 文件资产 / 资源下载 ----
+		// 这批是免签名豁免路径（v2SignMiddleware 按 v2UnsignedPaths 放行），
+		// 只靠下面的 authMiddleware 校验 Bearer JWT。
+		r.Post("/files/check", api.handleFileCheck)
+		r.Post("/files/upload", api.handleFileUpload)
+		r.Get("/files/download/{fileID}", api.handleFileDownload)
+		r.Head("/files/download/{fileID}", api.handleFileDownload)
+		r.Post("/resources/upload", api.handleResourceUploadV2)
+		r.Get("/resources/download/{itemID}", api.handleResourceDownload)
+		r.Head("/resources/download/{itemID}", api.handleResourceDownload)
+
 		// ---- 输入状态 ----
 		r.Post("/chats/typing", api.handleChatTyping)
 		r.Get("/chats/{chatId}/typing", api.handleChatTypingStatus)

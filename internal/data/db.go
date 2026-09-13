@@ -302,6 +302,18 @@ CREATE TABLE IF NOT EXISTS group_invitations (
 	// 部分唯一索引：同一群对同一人同时只允许一条待处理邀请（已响应的可再邀）
 	_, _ = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_group_invitations_pending ON group_invitations (group_id, invitee_id) WHERE status = 'pending'`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_group_invitations_invitee ON group_invitations (invitee_id, status, created_at DESC)`)
+	// 文件资产：按 SHA-256 去重，供 /v2/files/upload 秒传与 /v2/files/download/{id} 取回
+	_, _ = db.Exec(`
+CREATE TABLE IF NOT EXISTS file_assets (
+    id VARCHAR(32) PRIMARY KEY,
+    sha256 VARCHAR(64) NOT NULL,
+    name VARCHAR(256) NOT NULL DEFAULT '',
+    stored_name VARCHAR(256) NOT NULL DEFAULT '',
+    size_bytes INTEGER NOT NULL DEFAULT 0,
+    owner_id VARCHAR(32) NULL REFERENCES users(id) ON DELETE SET NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+)`)
+	_, _ = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_file_assets_sha256 ON file_assets (sha256)`)
 	_, _ = db.Exec(`
 CREATE TABLE IF NOT EXISTS banned_devices (
     device_id VARCHAR(128) PRIMARY KEY,

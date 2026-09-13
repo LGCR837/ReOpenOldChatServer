@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,6 +27,12 @@ const (
 	v2ClockSkew     = 300 * time.Second // 允许的时钟偏移
 	v2NonceCacheTTL = 600 * time.Second // nonce 去重保留时长
 )
+
+// 官方 §4.5：/v2/{files,resources}/{upload,download} 不加密、不签名，仅 Bearer JWT 鉴权
+// （流式 multipart / Range 下载，无法逐帧签名）。客户端 SDK 的 V2_UNSIGNED_PATHS
+// 刻意不带 X-Session/X-Sign，若在此照常校验签名链必然 401。
+// 豁免的只是签名，鉴权仍由 authMiddleware 的 Bearer JWT 负责。
+var v2UnsignedPaths = regexp.MustCompile(`^/v2/(files|resources)/(upload|download)(/|$)`)
 
 type nonceCache struct {
 	mu      sync.Mutex
@@ -72,6 +79,12 @@ func (c *nonceCache) check(nonce string) bool {
 func (a *API) v2SignMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !a.cfg.V2SignRequired {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// 免签名豁免路径：放行，后续 authMiddleware 仍会校验 Bearer JWT
+		if v2UnsignedPaths.MatchString(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}
