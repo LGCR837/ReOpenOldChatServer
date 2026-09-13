@@ -150,6 +150,21 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Post("/resources/upload", api.handleResourceUploadV2)
 		r.Get("/resources/download/{itemID}", api.handleResourceDownload)
 		r.Head("/resources/download/{itemID}", api.handleResourceDownload)
+		// 资源广场：与 v1 同 handler（无协议差异），v2 优先模式下 SDK 可能直达这里
+		r.Get("/resources/sections", api.handleResourceSectionList)
+		r.Post("/resources/sections", api.handleResourceSectionCreate)
+		r.Post("/resources/sections/delete", api.handleResourceSectionDelete)
+		r.Get("/resources/items", api.handleResourceItems)
+		r.Post("/resources/items/delete", api.handleResourceItemDelete)
+		r.Get("/resources/search", api.handleResourceSearch)
+		r.Post("/resources/like", api.handleResourceLike)
+		r.Post("/resources/unlike", api.handleResourceUnlike)
+		r.Get("/resources/comments", api.handleResourceComments)
+		r.Post("/resources/comment", api.handleResourceComment)
+		r.Post("/resources/comment/delete", api.handleResourceCommentDelete)
+		r.Post("/resources/report", api.handleResourceReport)
+		r.Get("/me/resources/quota", api.handleMeResourceQuota)
+		r.Get("/me/resource-reports", api.handleMeResourceReports)
 
 		// ---- 输入状态 ----
 		r.Post("/chats/typing", api.handleChatTyping)
