@@ -15,12 +15,21 @@ type tokenPair struct {
 	RefreshToken string
 }
 
-func (a *API) issueTokens(ctx context.Context, user *data.User) (tokenPair, error) {
+// deviceInfo 签发 token 时随行的设备信息，落 user_sessions 供会话列表/精确吊销。
+type deviceInfo struct {
+	ID         string
+	Name       string
+	Platform   string
+	AppVersion string
+}
+
+// issueTokens 签发 access+refresh 并登记一条登录会话（jti = access token 的 JWT ID）。
+func (a *API) issueTokens(ctx context.Context, user *data.User, dev deviceInfo) (tokenPair, error) {
 	version := 0
 	if user != nil {
 		version = user.TokenVersion
 	}
-	accessToken, err := auth.NewAccessToken(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.NCUID, user.Username, version)
+	accessToken, jti, err := auth.NewAccessTokenWithJTI(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.NCUID, user.Username, version, dev.ID)
 	if err != nil {
 		return tokenPair{}, err
 	}
@@ -33,6 +42,15 @@ func (a *API) issueTokens(ctx context.Context, user *data.User) (tokenPair, erro
 	if err := a.refresh.Create(ctx, refreshModel); err != nil {
 		return tokenPair{}, err
 	}
+
+	_ = a.loginSessions.Create(ctx, &data.UserSession{
+		JTI:        jti,
+		UserID:     user.ID,
+		DeviceID:   dev.ID,
+		DeviceName: dev.Name,
+		Platform:   dev.Platform,
+		AppVersion: dev.AppVersion,
+	})
 
 	return tokenPair{AccessToken: accessToken, RefreshToken: rawRefresh}, nil
 }

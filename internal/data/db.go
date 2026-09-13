@@ -287,6 +287,18 @@ CREATE TABLE IF NOT EXISTS user_login_devices (
 )`)
 	_, _ = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_login_device_pair ON user_login_devices (user_id, device_id)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_user_login_devices_user ON user_login_devices (user_id)`)
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS user_sessions (
+    jti VARCHAR(32) PRIMARY KEY,
+    user_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    device_id VARCHAR(128) NOT NULL DEFAULT '',
+    device_name VARCHAR(128) NOT NULL DEFAULT '',
+    platform VARCHAR(32) NOT NULL DEFAULT '',
+    app_version VARCHAR(32) NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revoked_at DATETIME NULL
+)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions (user_id, revoked_at)`)
 	_ = addColumnIfMissing(db, "group_members", "last_read_at", "DATETIME NULL")
 	// 群邀请：目标用户开了「拒绝群邀请」偏好时，invite 不再直接加人而是落一条待处理邀请
 	_, _ = db.Exec(`

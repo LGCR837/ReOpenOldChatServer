@@ -71,6 +71,8 @@ func (a *API) handleMeDevicesCleanupOthers(w http.ResponseWriter, r *http.Reques
 	}
 
 	_ = a.refresh.RevokeAllByUser(ctx, user.ID)
+	// 会话表同步清场：全部吊销，换发的新 token 会登记为新会话（见 issueTokens）
+	_ = a.loginSessions.RevokeAllByUser(ctx, user.ID)
 	newVersion, err := a.users.IncrementTokenVersion(ctx, user.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_failed", "internal error")
@@ -79,7 +81,7 @@ func (a *API) handleMeDevicesCleanupOthers(w http.ResponseWriter, r *http.Reques
 	user.TokenVersion = newVersion
 	a.setTokenVersionCache(user.ID, newVersion)
 
-	tokens, err := a.issueTokens(ctx, user)
+	tokens, err := a.issueTokens(ctx, user, deviceInfo{ID: deviceID, Name: deviceName, Platform: platform, AppVersion: appVersion})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_failed", "internal error")
 		return

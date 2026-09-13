@@ -21,6 +21,10 @@ type directCreateUserRequest struct {
 	DisplayName     string `json:"display_name"`
 	CoinBalance     int    `json:"coin_balance"`
 	ReputationScore *int   `json:"reputation_score"`
+	DeviceID        string `json:"device_id,omitempty"`
+	DeviceName      string `json:"device_name,omitempty"`
+	Platform        string `json:"platform,omitempty"`
+	AppVersion      string `json:"app_version,omitempty"`
 }
 
 type directCreateUserResult struct {
@@ -151,7 +155,11 @@ func (a *API) createDirectUserForTest(ctx context.Context, req directCreateUserR
 	}
 
 	a.setTokenVersionCache(user.ID, user.TokenVersion)
-	tokens, err := a.issueTokens(ctx, user)
+	if req.DeviceID != "" {
+		_ = a.devices.UpsertUserDevice(ctx, user.ID, req.DeviceID, "")
+		_ = a.devices.UpsertLoginDevice(ctx, user.ID, req.DeviceID, req.DeviceName, strings.ToLower(req.Platform), req.AppVersion)
+	}
+	tokens, err := a.issueTokens(ctx, user, deviceInfo{ID: req.DeviceID, Name: req.DeviceName, Platform: req.Platform, AppVersion: req.AppVersion})
 	if err != nil {
 		return nil, http.StatusInternalServerError, "token_failed", "internal error"
 	}

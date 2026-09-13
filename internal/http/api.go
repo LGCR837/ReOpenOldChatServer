@@ -38,6 +38,7 @@ type API struct {
 	coinTransfers     *data.ExternalCoinTransferStore
 	resourceReports   *data.ResourceReportStore
 	checkinWall       *data.CheckinWallStore
+	loginSessions     *data.SessionStore
 	publicCourt       *data.PublicCourtStore
 	banAppeals        *data.BanAppealStore
 	devices           *data.DeviceStore
@@ -90,6 +91,7 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 		coinTransfers:     data.NewExternalCoinTransferStore(db),
 		resourceReports:   data.NewResourceReportStore(db),
 		checkinWall:       data.NewCheckinWallStore(db),
+		loginSessions:     data.NewSessionStore(db),
 		publicCourt:       data.NewPublicCourtStore(db),
 		banAppeals:        data.NewBanAppealStore(db),
 		devices:           data.NewDeviceStore(db),
@@ -242,6 +244,7 @@ func (api *API) registerV1Routes(r chi.Router) {
 		r.Get("/me/checkin/wall/comments", api.handleCheckinWallComments)
 		r.Get("/me/checkin/wall/likes", api.handleCheckinWallLikes)
 		r.Get("/me/devices", api.handleMeDevices)
+		r.Get("/me/sessions", api.handleMeSessions)
 		r.Post("/me/devices/cleanup", api.handleMeDevicesCleanupOthers)
 		r.Post("/me/devices/cleanup-others", api.handleMeDevicesCleanupOthers)
 		r.Post("/me/presence", api.handleMePresence)

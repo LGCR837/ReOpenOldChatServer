@@ -43,6 +43,11 @@ type loginRequest struct {
 
 type refreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+	// 可选设备信息：官方客户端 refresh 时不带也能工作，带了可保持会话列表的设备标注
+	DeviceID   string `json:"device_id,omitempty"`
+	DeviceName string `json:"device_name,omitempty"`
+	Platform   string `json:"platform,omitempty"`
+	AppVersion string `json:"app_version,omitempty"`
 }
 
 type resetPasswordRequest struct {
@@ -218,7 +223,7 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 	_ = a.devices.UpsertUserDevice(ctx, user.ID, deviceID, imei)
 	_ = a.devices.UpsertLoginDevice(ctx, user.ID, deviceID, deviceName, platform, appVersion)
 
-	tokens, err := a.issueTokens(ctx, user)
+	tokens, err := a.issueTokens(ctx, user, deviceInfo{ID: deviceID, Name: deviceName, Platform: platform, AppVersion: appVersion})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_failed", "internal error")
 		return
@@ -305,18 +310,13 @@ func (a *API) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = a.refresh.RevokeAllByUser(ctx, user.ID)
-	newVersion, err := a.users.IncrementTokenVersion(ctx, user.ID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "token_failed", "internal error")
-		return
-	}
-	user.TokenVersion = newVersion
-	a.setTokenVersionCache(user.ID, user.TokenVersion)
+	// 多设备并存（对齐官方）：登录不再吊销旧会话/递增 token version，
+	// 各设备会话由 sessions 表独立登记与吊销（logout/cleanup/改密）。
+	// 全局失效场景（改密、封禁）走 IncrementTokenVersion，不在登录路径。
 
 	a.maybeRehashPassword(user, password)
 
-	tokens, err := a.issueTokens(ctx, user)
+	tokens, err := a.issueTokens(ctx, user, deviceInfo{ID: deviceID, Name: deviceName, Platform: platform, AppVersion: appVersion})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_failed", "internal error")
 		return
@@ -493,11 +493,16 @@ func (a *API) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := auth.NewAccessToken(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.NCUID, user.Username, user.TokenVersion)
+	accessToken, jti, err := auth.NewAccessTokenWithJTI(a.cfg.JWTSecret, a.cfg.JWTIssuer, a.cfg.AccessTokenTTL, user.ID, user.UID, user.NCUID, user.Username, user.TokenVersion, strings.TrimSpace(req.DeviceID))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_failed", "internal error")
 		return
 	}
+	// refresh 换发的 access 也是一条新会话（同设备），保持 sessions 与活跃 token 一致
+	_ = a.loginSessions.Create(ctx, &data.UserSession{
+		JTI: jti, UserID: user.ID, DeviceID: strings.TrimSpace(req.DeviceID),
+		DeviceName: strings.TrimSpace(req.DeviceName), Platform: strings.ToLower(strings.TrimSpace(req.Platform)), AppVersion: strings.TrimSpace(req.AppVersion),
+	})
 
 	writeJSON(w, http.StatusOK, authResponse{
 		AccessToken:  accessToken,
@@ -530,6 +535,13 @@ func (a *API) handleLogout(w http.ResponseWriter, r *http.Request) {
 	stored, err := a.refresh.GetByHash(ctx, tokenHash)
 	if err == nil {
 		_ = a.refresh.Revoke(ctx, stored.ID)
+	}
+
+	// 吊销当前 access 会话（JWT 无状态，靠 session 表在中间件拦截）。
+	// logout 路由不在 auth 组内（官方允许仅凭 refresh_token 调用），需手动解析 Bearer。
+	if claims, ok := a.authenticateFromHeader(r); ok && claims.ID != "" {
+		_ = a.loginSessions.Revoke(ctx, claims.ID)
+		invalidateSessionCache(claims.ID)
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{Status: "ok"})

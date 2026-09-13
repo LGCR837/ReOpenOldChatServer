@@ -325,7 +325,7 @@ func (a *API) handleShopLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := a.issueTokens(ctx, user)
+	tokens, err := a.issueTokens(ctx, user, deviceInfo{})
 	if err != nil {
 		a.renderTitleShop(w, r, "登录失败，请稍后再试", "")
 		return
