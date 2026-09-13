@@ -301,6 +301,32 @@ CREATE TABLE IF NOT EXISTS group_invitations (
 )`)
 	// 部分唯一索引：同一群对同一人同时只允许一条待处理邀请（已响应的可再邀）
 	_, _ = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_group_invitations_pending ON group_invitations (group_id, invitee_id) WHERE status = 'pending'`)
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS checkin_wall_posts (
+    id VARCHAR(32) PRIMARY KEY,
+    user_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    checkin_date TEXT NOT NULL,
+    message_type TEXT NOT NULL DEFAULT 'text',
+    content_text TEXT NOT NULL DEFAULT '',
+    image_url TEXT NOT NULL DEFAULT '',
+    thumb_url TEXT NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+)`)
+	_, _ = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_checkin_wall_user_date ON checkin_wall_posts (user_id, checkin_date)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_checkin_wall_posts_created ON checkin_wall_posts (created_at DESC)`)
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS checkin_wall_likes (
+    post_id VARCHAR(32) NOT NULL REFERENCES checkin_wall_posts(id) ON DELETE CASCADE,
+    user_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (post_id, user_id)
+)`)
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS checkin_wall_comments (
+    id VARCHAR(32) PRIMARY KEY,
+    post_id VARCHAR(32) NOT NULL REFERENCES checkin_wall_posts(id) ON DELETE CASCADE,
+    user_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_checkin_wall_comments_post ON checkin_wall_comments (post_id, created_at)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_group_invitations_invitee ON group_invitations (invitee_id, status, created_at DESC)`)
 	// 文件资产：按 SHA-256 去重，供 /v2/files/upload 秒传与 /v2/files/download/{id} 取回
 	_, _ = db.Exec(`

@@ -109,6 +109,7 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Post("/me/checkin", api.handleMeCheckIn)
 		r.Get("/me/devices", api.handleMeDevices)
 		r.Post("/me/devices/cleanup", api.handleMeDevicesCleanupOthers)
+		r.Post("/me/devices/cleanup-others", api.handleMeDevicesCleanupOthers)
 		r.Post("/me/password", api.handleUpdatePassword)
 		r.Get("/me/group-reports", api.handleMeGroupReports)
 		r.Get("/me/bug-reports", api.handleMeBugReports)

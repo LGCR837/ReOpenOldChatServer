@@ -37,6 +37,7 @@ type API struct {
 	favorites         *data.FavoriteStore
 	coinTransfers     *data.ExternalCoinTransferStore
 	resourceReports   *data.ResourceReportStore
+	checkinWall       *data.CheckinWallStore
 	publicCourt       *data.PublicCourtStore
 	banAppeals        *data.BanAppealStore
 	devices           *data.DeviceStore
@@ -88,6 +89,7 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 		favorites:         data.NewFavoriteStore(db),
 		coinTransfers:     data.NewExternalCoinTransferStore(db),
 		resourceReports:   data.NewResourceReportStore(db),
+		checkinWall:       data.NewCheckinWallStore(db),
 		publicCourt:       data.NewPublicCourtStore(db),
 		banAppeals:        data.NewBanAppealStore(db),
 		devices:           data.NewDeviceStore(db),
@@ -231,7 +233,20 @@ func (api *API) registerV1Routes(r chi.Router) {
 		r.Use(api.authMiddleware)
 		r.Get("/me", api.handleMe)
 		r.Post("/me/checkin", api.handleMeCheckIn)
+		// 签到墙（/v1 独有，官方格式按实测逆向）
+		r.Get("/me/checkin/wall", api.handleCheckinWallGet)
+		r.Post("/me/checkin/wall", api.handleCheckinWallPost)
+		r.Post("/me/checkin/wall/like", api.handleCheckinWallLike)
+		r.Post("/me/checkin/wall/unlike", api.handleCheckinWallUnlike)
+		r.Post("/me/checkin/wall/comment", api.handleCheckinWallComment)
+		r.Get("/me/checkin/wall/comments", api.handleCheckinWallComments)
+		r.Get("/me/checkin/wall/likes", api.handleCheckinWallLikes)
 		r.Get("/me/devices", api.handleMeDevices)
+		r.Post("/me/devices/cleanup", api.handleMeDevicesCleanupOthers)
+		r.Post("/me/devices/cleanup-others", api.handleMeDevicesCleanupOthers)
+		r.Post("/me/presence", api.handleMePresence)
+		r.Get("/groups/messages/after", api.handleGroupMessagesAfter)
+		r.Post("/voice/asr", api.handleVoiceASR)
 		r.Get("/me/bug-reports", api.handleMeBugReports)
 		r.Get("/me/user-reports", api.handleMeUserReports)
 		r.Get("/me/group-reports", api.handleMeGroupReports)
