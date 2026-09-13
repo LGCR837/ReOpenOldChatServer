@@ -13,25 +13,27 @@ import (
 )
 
 type groupMessageSendRequest struct {
-	GroupID    string `json:"group_id"`
-	Body       string `json:"body"`
-	MsgType    string `json:"msg_type"`
-	MediaURL   string `json:"media_url"`
-	ThumbURL   string `json:"thumb_url"`
-	DurationMS int    `json:"duration_ms"`
+	GroupID     string `json:"group_id"`
+	Body        string `json:"body"`
+	MsgType     string `json:"msg_type"`
+	MediaURL    string `json:"media_url"`
+	ThumbURL    string `json:"thumb_url"`
+	DurationMS  int    `json:"duration_ms"`
+	BurnSeconds int    `json:"burn_after_seconds"`
 }
 
 type groupMessageResponse struct {
-	ID         string `json:"id"`
-	GroupID    string `json:"group_id"`
-	FromUID    string `json:"from_uid"`
-	FromNCUID  string `json:"from_ncuid"`
-	Body       string `json:"body"`
-	MsgType    string `json:"msg_type"`
-	MediaURL   string `json:"media_url,omitempty"`
-	ThumbURL   string `json:"thumb_url,omitempty"`
-	DurationMS int    `json:"duration_ms,omitempty"`
-	CreatedAt  int64  `json:"created_at"`
+	ID          string `json:"id"`
+	GroupID     string `json:"group_id"`
+	FromUID     string `json:"from_uid"`
+	FromNCUID   string `json:"from_ncuid"`
+	Body        string `json:"body"`
+	MsgType     string `json:"msg_type"`
+	MediaURL    string `json:"media_url,omitempty"`
+	ThumbURL    string `json:"thumb_url,omitempty"`
+	DurationMS  int    `json:"duration_ms,omitempty"`
+	BurnSeconds int    `json:"burn_after_seconds,omitempty"`
+	CreatedAt   int64  `json:"created_at"`
 }
 
 type groupMessagesResponse struct {
@@ -52,16 +54,17 @@ type groupReadRequest struct {
 }
 
 type groupUnreadMessageResponse struct {
-	ID         string `json:"id"`
-	GroupID    string `json:"group_id"`
-	FromUID    string `json:"from_uid"`
-	FromNCUID  string `json:"from_ncuid"`
-	Body       string `json:"body"`
-	MsgType    string `json:"msg_type"`
-	MediaURL   string `json:"media_url,omitempty"`
-	ThumbURL   string `json:"thumb_url,omitempty"`
-	DurationMS int    `json:"duration_ms,omitempty"`
-	CreatedAt  int64  `json:"created_at"`
+	ID          string `json:"id"`
+	GroupID     string `json:"group_id"`
+	FromUID     string `json:"from_uid"`
+	FromNCUID   string `json:"from_ncuid"`
+	Body        string `json:"body"`
+	MsgType     string `json:"msg_type"`
+	MediaURL    string `json:"media_url,omitempty"`
+	ThumbURL    string `json:"thumb_url,omitempty"`
+	DurationMS  int    `json:"duration_ms,omitempty"`
+	BurnSeconds int    `json:"burn_after_seconds,omitempty"`
+	CreatedAt   int64  `json:"created_at"`
 }
 
 type groupUnreadResponse struct {
@@ -170,6 +173,8 @@ func (a *API) handleGroupMessageSend(w http.ResponseWriter, r *http.Request) {
 
 	msgID := nanoid.New()
 
+	burnSeconds := clampBurnSeconds(req.BurnSeconds)
+
 	msg := &data.GroupMessage{
 		ID:          msgID,
 		GroupID:     groupID,
@@ -180,6 +185,7 @@ func (a *API) handleGroupMessageSend(w http.ResponseWriter, r *http.Request) {
 		MediaURL:    mediaURL,
 		ThumbURL:    thumbURL,
 		DurationMS:  req.DurationMS,
+		BurnSeconds: burnSeconds,
 	}
 	if err := a.groupMsgs.Create(ctx, msg); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
@@ -187,16 +193,17 @@ func (a *API) handleGroupMessageSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := groupMessageResponse{
-		ID:         msgID,
-		GroupID:    groupID,
-		FromUID:    claims.UID,
-		FromNCUID:  claims.NCUID,
-		Body:       body,
-		MsgType:    msgType,
-		MediaURL:   mediaURL,
-		ThumbURL:   thumbURL,
-		DurationMS: req.DurationMS,
-		CreatedAt:  time.Now().Unix(),
+		ID:          msgID,
+		GroupID:     groupID,
+		FromUID:     claims.UID,
+		FromNCUID:   claims.NCUID,
+		Body:        body,
+		MsgType:     msgType,
+		MediaURL:    mediaURL,
+		ThumbURL:    thumbURL,
+		DurationMS:  req.DurationMS,
+		BurnSeconds: burnSeconds,
+		CreatedAt:   time.Now().Unix(),
 	}
 	writeJSON(w, http.StatusCreated, resp)
 	chatLogf("%s GRP %s | %s: %s", time.Now().Format("15:04:05"), groupID, claims.UID, formatChatPreview(msgType, body))
@@ -289,16 +296,17 @@ func (a *API) handleGroupMessages(w http.ResponseWriter, r *http.Request) {
 			msgType = "text"
 		}
 		resp = append(resp, groupMessageResponse{
-			ID:         msg.ID,
-			GroupID:    msg.GroupID,
-			FromUID:    fromUID,
-			FromNCUID:  msg.SenderNCUID,
-			Body:       msg.Body,
-			MsgType:    msgType,
-			MediaURL:   msg.MediaURL,
-			ThumbURL:   msg.ThumbURL,
-			DurationMS: msg.DurationMS,
-			CreatedAt:  msg.Created.Unix(),
+			ID:          msg.ID,
+			GroupID:     msg.GroupID,
+			FromUID:     fromUID,
+			FromNCUID:   msg.SenderNCUID,
+			Body:        msg.Body,
+			MsgType:     msgType,
+			MediaURL:    msg.MediaURL,
+			ThumbURL:    msg.ThumbURL,
+			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
+			CreatedAt:   msg.Created.Unix(),
 		})
 	}
 
@@ -386,16 +394,17 @@ func (a *API) handleGroupMessagesV2(w http.ResponseWriter, r *http.Request) {
 			msgType = "text"
 		}
 		resp = append(resp, groupMessageResponse{
-			ID:         msg.ID,
-			GroupID:    msg.GroupID,
-			FromUID:    fromUID,
-			FromNCUID:  msg.SenderNCUID,
-			Body:       msg.Body,
-			MsgType:    msgType,
-			MediaURL:   msg.MediaURL,
-			ThumbURL:   msg.ThumbURL,
-			DurationMS: msg.DurationMS,
-			CreatedAt:  msg.Created.Unix(),
+			ID:          msg.ID,
+			GroupID:     msg.GroupID,
+			FromUID:     fromUID,
+			FromNCUID:   msg.SenderNCUID,
+			Body:        msg.Body,
+			MsgType:     msgType,
+			MediaURL:    msg.MediaURL,
+			ThumbURL:    msg.ThumbURL,
+			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
+			CreatedAt:   msg.Created.Unix(),
 		})
 	}
 
@@ -476,16 +485,17 @@ func (a *API) handleGroupMessagesSearch(w http.ResponseWriter, r *http.Request) 
 			msgType = "text"
 		}
 		resp = append(resp, groupMessageResponse{
-			ID:         msg.ID,
-			GroupID:    msg.GroupID,
-			FromUID:    fromUID,
-			FromNCUID:  msg.SenderNCUID,
-			Body:       msg.Body,
-			MsgType:    msgType,
-			MediaURL:   msg.MediaURL,
-			ThumbURL:   msg.ThumbURL,
-			DurationMS: msg.DurationMS,
-			CreatedAt:  msg.Created.Unix(),
+			ID:          msg.ID,
+			GroupID:     msg.GroupID,
+			FromUID:     fromUID,
+			FromNCUID:   msg.SenderNCUID,
+			Body:        msg.Body,
+			MsgType:     msgType,
+			MediaURL:    msg.MediaURL,
+			ThumbURL:    msg.ThumbURL,
+			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
+			CreatedAt:   msg.Created.Unix(),
 		})
 	}
 
@@ -526,16 +536,17 @@ func (a *API) handleGroupUnread(w http.ResponseWriter, r *http.Request) {
 			msgType = "text"
 		}
 		resp = append(resp, groupUnreadMessageResponse{
-			ID:         msg.ID,
-			GroupID:    msg.GroupID,
-			FromUID:    msg.SenderUID,
-			FromNCUID:  msg.SenderNCUID,
-			Body:       msg.Body,
-			MsgType:    msgType,
-			MediaURL:   msg.MediaURL,
-			ThumbURL:   msg.ThumbURL,
-			DurationMS: msg.DurationMS,
-			CreatedAt:  msg.Created.Unix(),
+			ID:          msg.ID,
+			GroupID:     msg.GroupID,
+			FromUID:     msg.SenderUID,
+			FromNCUID:   msg.SenderNCUID,
+			Body:        msg.Body,
+			MsgType:     msgType,
+			MediaURL:    msg.MediaURL,
+			ThumbURL:    msg.ThumbURL,
+			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
+			CreatedAt:   msg.Created.Unix(),
 		})
 	}
 

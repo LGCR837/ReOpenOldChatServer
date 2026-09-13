@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS direct_messages (
     media_url TEXT NOT NULL DEFAULT '',
     thumb_url TEXT NOT NULL DEFAULT '',
     duration_ms INTEGER NOT NULL DEFAULT 0,
+    -- 阅后即焚时长（秒），0=关闭。客户端据此渲染遮罩与倒计时，服务端只存不算
+    burn_after_seconds INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     delivered_at DATETIME NULL,
     read_at DATETIME NULL
@@ -104,6 +106,8 @@ CREATE TABLE IF NOT EXISTS group_messages (
     media_url TEXT NOT NULL DEFAULT '',
     thumb_url TEXT NOT NULL DEFAULT '',
     duration_ms INTEGER NOT NULL DEFAULT 0,
+    -- 阅后即焚时长（秒），0=关闭。同 direct_messages，服务端只存不算
+    burn_after_seconds INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -120,6 +120,8 @@ func (api *API) registerV2Routes(r chi.Router) {
 
 		// ---- 朋友圈 ----
 		r.Get("/moments", api.handleMomentFeed)
+		// 官方规范路径，语义同 /moments（游标分页 before_created_at）
+		r.Get("/moments/feed", api.handleMomentFeed)
 		r.Post("/moments", api.handleMomentCreate)
 		r.Post("/moments/like", api.handleMomentLike)
 		r.Post("/moments/unlike", api.handleMomentUnlike)

@@ -16,13 +16,14 @@ import (
 const maxVoiceDurationMS = 60000
 
 type directSendRequest struct {
-	ToUID      string `json:"to_uid"`
-	ToNCUID    string `json:"to_ncuid"`
-	Body       string `json:"body"`
-	MsgType    string `json:"msg_type"`
-	MediaURL   string `json:"media_url"`
-	ThumbURL   string `json:"thumb_url"`
-	DurationMS int    `json:"duration_ms"`
+	ToUID       string `json:"to_uid"`
+	ToNCUID     string `json:"to_ncuid"`
+	Body        string `json:"body"`
+	MsgType     string `json:"msg_type"`
+	MediaURL    string `json:"media_url"`
+	ThumbURL    string `json:"thumb_url"`
+	DurationMS  int    `json:"duration_ms"`
+	BurnSeconds int    `json:"burn_after_seconds"`
 }
 
 type directMessageResponse struct {
@@ -35,6 +36,7 @@ type directMessageResponse struct {
 	MediaURL    string `json:"media_url,omitempty"`
 	ThumbURL    string `json:"thumb_url,omitempty"`
 	DurationMS  int    `json:"duration_ms,omitempty"`
+	BurnSeconds int    `json:"burn_after_seconds,omitempty"`
 	CreatedAt   int64  `json:"created_at"`
 	DeliveredAt *int64 `json:"delivered_at,omitempty"`
 	ReadAt      *int64 `json:"read_at,omitempty"`
@@ -61,6 +63,7 @@ type directUnreadMessageResponse struct {
 	MediaURL    string `json:"media_url,omitempty"`
 	ThumbURL    string `json:"thumb_url,omitempty"`
 	DurationMS  int    `json:"duration_ms,omitempty"`
+	BurnSeconds int    `json:"burn_after_seconds,omitempty"`
 	CreatedAt   int64  `json:"created_at"`
 	DeliveredAt *int64 `json:"delivered_at,omitempty"`
 	ReadAt      *int64 `json:"read_at,omitempty"`
@@ -206,6 +209,7 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	msgID := nanoid.New()
+	burnSeconds := clampBurnSeconds(req.BurnSeconds)
 
 	msg := &data.DirectMessage{
 		ID:          msgID,
@@ -217,6 +221,7 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 		MediaURL:    mediaURL,
 		ThumbURL:    thumbURL,
 		DurationMS:  req.DurationMS,
+		BurnSeconds: burnSeconds,
 	}
 	if err := a.direct.CreateMessage(ctx, msg); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", "internal error")
@@ -224,16 +229,17 @@ func (a *API) handleDirectSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := directMessageResponse{
-		ID:         msgID,
-		ThreadID:   threadID,
-		FromUID:    currentUser.UID,
-		FromNCUID:  currentUser.NCUID,
-		Body:       body,
-		MsgType:    msgType,
-		MediaURL:   mediaURL,
-		ThumbURL:   thumbURL,
-		DurationMS: req.DurationMS,
-		CreatedAt:  time.Now().Unix(),
+		ID:          msgID,
+		ThreadID:    threadID,
+		FromUID:     currentUser.UID,
+		FromNCUID:   currentUser.NCUID,
+		Body:        body,
+		MsgType:     msgType,
+		MediaURL:    mediaURL,
+		ThumbURL:    thumbURL,
+		DurationMS:  req.DurationMS,
+		BurnSeconds: burnSeconds,
+		CreatedAt:   time.Now().Unix(),
 	}
 	writeJSON(w, http.StatusCreated, resp)
 	chatLogf("%s DM %s -> %s | %s", time.Now().Format("15:04:05"), currentUser.UID, targetUser.UID, formatChatPreview(msgType, body))
@@ -341,6 +347,7 @@ func (a *API) handleDirectMessages(w http.ResponseWriter, r *http.Request) {
 			MediaURL:    msg.MediaURL,
 			ThumbURL:    msg.ThumbURL,
 			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
 			CreatedAt:   msg.Created.Unix(),
 			DeliveredAt: deliveredAt,
 			ReadAt:      readAt,
@@ -458,6 +465,7 @@ func (a *API) handleDirectMessagesV2(w http.ResponseWriter, r *http.Request) {
 			MediaURL:    msg.MediaURL,
 			ThumbURL:    msg.ThumbURL,
 			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
 			CreatedAt:   msg.Created.Unix(),
 			DeliveredAt: deliveredAt,
 			ReadAt:      readAt,
@@ -566,6 +574,7 @@ func (a *API) handleDirectMessagesSearch(w http.ResponseWriter, r *http.Request)
 			MediaURL:    msg.MediaURL,
 			ThumbURL:    msg.ThumbURL,
 			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
 			CreatedAt:   msg.Created.Unix(),
 			DeliveredAt: deliveredAt,
 			ReadAt:      readAt,
@@ -632,6 +641,7 @@ func (a *API) handleDirectUnread(w http.ResponseWriter, r *http.Request) {
 			MediaURL:    msg.MediaURL,
 			ThumbURL:    msg.ThumbURL,
 			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
 			CreatedAt:   msg.Created.Unix(),
 			DeliveredAt: deliveredAt,
 			ReadAt:      readAt,
@@ -863,6 +873,18 @@ func parseBefore(raw string) time.Time {
 		return time.Time{}
 	}
 	return time.Unix(val, 0)
+}
+
+// clampBurnSeconds 归一阅后即焚时长：<=0 视为关闭，上限 24h，挡掉脏值。
+// 服务端只存储与回传，真正的遮罩/倒计时/自毁都在客户端。
+func clampBurnSeconds(v int) int {
+	if v <= 0 {
+		return 0
+	}
+	if v > 86400 {
+		return 86400
+	}
+	return v
 }
 
 // wsEnvelope keeps the WebSocket payload format consistent.

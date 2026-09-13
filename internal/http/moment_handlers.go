@@ -166,7 +166,12 @@ func (a *API) handleMomentFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	limit := parseLimit(r.URL.Query().Get("limit"))
-	before := parseBefore(r.URL.Query().Get("before"))
+	// 官方 v2 规范用 before_created_at，本地旧约定是 before，两个都认
+	beforeRaw := r.URL.Query().Get("before_created_at")
+	if beforeRaw == "" {
+		beforeRaw = r.URL.Query().Get("before")
+	}
+	before := parseBefore(beforeRaw)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()

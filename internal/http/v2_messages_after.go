@@ -76,16 +76,17 @@ func (a *API) handleGroupMessagesAfter(w http.ResponseWriter, r *http.Request) {
 			msgType = "text"
 		}
 		resp = append(resp, groupMessageResponse{
-			ID:         msg.ID,
-			GroupID:    msg.GroupID,
-			FromUID:    a.resolveUID(ctx, msg.SenderID, uidCache),
-			FromNCUID:  msg.SenderNCUID,
-			Body:       msg.Body,
-			MsgType:    msgType,
-			MediaURL:   msg.MediaURL,
-			ThumbURL:   msg.ThumbURL,
-			DurationMS: msg.DurationMS,
-			CreatedAt:  msg.Created.Unix(),
+			ID:          msg.ID,
+			GroupID:     msg.GroupID,
+			FromUID:     a.resolveUID(ctx, msg.SenderID, uidCache),
+			FromNCUID:   msg.SenderNCUID,
+			Body:        msg.Body,
+			MsgType:     msgType,
+			MediaURL:    msg.MediaURL,
+			ThumbURL:    msg.ThumbURL,
+			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
+			CreatedAt:   msg.Created.Unix(),
 		})
 	}
 
@@ -167,16 +168,17 @@ func (a *API) handleDirectMessagesAfter(w http.ResponseWriter, r *http.Request) 
 			msgType = "text"
 		}
 		resp = append(resp, directMessageResponse{
-			ID:         msg.ID,
-			ThreadID:   msg.ThreadID,
-			FromUID:    a.resolveUID(ctx, msg.SenderID, uidCache),
-			FromNCUID:  msg.SenderNCUID,
-			Body:       msg.Body,
-			MsgType:    msgType,
-			MediaURL:   msg.MediaURL,
-			ThumbURL:   msg.ThumbURL,
-			DurationMS: msg.DurationMS,
-			CreatedAt:  msg.Created.Unix(),
+			ID:          msg.ID,
+			ThreadID:    msg.ThreadID,
+			FromUID:     a.resolveUID(ctx, msg.SenderID, uidCache),
+			FromNCUID:   msg.SenderNCUID,
+			Body:        msg.Body,
+			MsgType:     msgType,
+			MediaURL:    msg.MediaURL,
+			ThumbURL:    msg.ThumbURL,
+			DurationMS:  msg.DurationMS,
+			BurnSeconds: msg.BurnSeconds,
+			CreatedAt:   msg.Created.Unix(),
 		})
 	}
 

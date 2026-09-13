@@ -18,6 +18,7 @@ type GroupMessage struct {
 	MediaURL    string    `db:"media_url"`
 	ThumbURL    string    `db:"thumb_url"`
 	DurationMS  int       `db:"duration_ms"`
+	BurnSeconds int       `db:"burn_after_seconds"`
 	Created     time.Time `db:"created_at"`
 }
 
@@ -32,6 +33,7 @@ type UnreadGroupMessage struct {
 	MediaURL    string    `db:"media_url"`
 	ThumbURL    string    `db:"thumb_url"`
 	DurationMS  int       `db:"duration_ms"`
+	BurnSeconds int       `db:"burn_after_seconds"`
 	Created     time.Time `db:"created_at"`
 }
 
@@ -45,8 +47,8 @@ func NewGroupMessageStore(db *sqlx.DB) *GroupMessageStore {
 
 func (s *GroupMessageStore) Create(ctx context.Context, m *GroupMessage) error {
 	const q = `
-INSERT INTO group_messages (id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at)
-VALUES (:id, :group_id, :sender_id, :sender_ncuid, :body, :msg_type, :media_url, :thumb_url, :duration_ms, CURRENT_TIMESTAMP)`
+INSERT INTO group_messages (id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at)
+VALUES (:id, :group_id, :sender_id, :sender_ncuid, :body, :msg_type, :media_url, :thumb_url, :duration_ms, :burn_after_seconds, CURRENT_TIMESTAMP)`
 
 	_, err := s.db.NamedExecContext(ctx, q, m)
 	return err
@@ -63,7 +65,7 @@ func (s *GroupMessageStore) CountByGroup(ctx context.Context, groupID string) (i
 func (s *GroupMessageStore) GetByID(ctx context.Context, messageID string) (*GroupMessage, error) {
 	var m GroupMessage
 	err := s.db.GetContext(ctx, &m, `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE id = $1
 LIMIT 1`, messageID)
@@ -85,7 +87,7 @@ func (s *GroupMessageStore) ListByGroup(ctx context.Context, groupID string, lim
 	}
 
 	const q = `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE group_id = $1 AND created_at < $2
 ORDER BY created_at DESC, id DESC
@@ -146,7 +148,7 @@ func (s *GroupMessageStore) ListByGroupWithOffset(ctx context.Context, groupID s
 	}
 
 	const q = `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE group_id = $1
 ORDER BY created_at DESC, id DESC
@@ -171,7 +173,7 @@ func (s *GroupMessageStore) SearchByGroupWithOffset(ctx context.Context, groupID
 	var msgs []GroupMessage
 	if kind == "text" {
 		const qText = `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE group_id = $1 AND (body LIKE $2 OR media_url LIKE $2) AND msg_type = 'text'
 ORDER BY created_at DESC, id DESC
@@ -183,7 +185,7 @@ LIMIT $3 OFFSET $4`
 	}
 	if kind == "media" {
 		const qMedia = `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE group_id = $1 AND (body LIKE $2 OR media_url LIKE $2)
   AND msg_type IN ('image', 'video', 'voice', 'resource')
@@ -196,7 +198,7 @@ LIMIT $3 OFFSET $4`
 	}
 
 	const qAll = `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE group_id = $1 AND (body LIKE $2 OR media_url LIKE $2)
 ORDER BY created_at DESC, id DESC
@@ -258,7 +260,8 @@ func (s *GroupMessageStore) ListUnreadByUser(ctx context.Context, userID string,
 	}
 	const q = `
 SELECT gm.id, gm.group_id, gm.sender_id, su.uid AS sender_uid, su.ncuid AS sender_ncuid,
-       gm.body, gm.msg_type, gm.media_url, gm.thumb_url, gm.duration_ms, gm.created_at
+       gm.body, gm.msg_type, gm.media_url, gm.thumb_url, gm.duration_ms,
+       gm.burn_after_seconds, gm.created_at
 FROM group_messages gm
 JOIN group_members m ON m.group_id = gm.group_id
 JOIN users su ON gm.sender_id = su.id
@@ -284,7 +287,7 @@ func (s *GroupMessageStore) ListAfter(ctx context.Context, groupID, afterID stri
 	var msgs []GroupMessage
 	if afterID == "" {
 		const qHead = `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE group_id = $1
 ORDER BY created_at DESC, rowid DESC
@@ -299,7 +302,7 @@ LIMIT $2`
 	// created_at 只到秒，同秒消息必须靠 rowid 打破平局：rowid 单调递增，
 	// 保证「after=某条」不会把同秒的后续消息判成「之前」而永久跳过。
 	const q = `
-SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, created_at
+SELECT id, group_id, sender_id, sender_ncuid, body, msg_type, media_url, thumb_url, duration_ms, burn_after_seconds, created_at
 FROM group_messages
 WHERE group_id = $1
   AND (created_at, rowid) > (SELECT created_at, rowid FROM group_messages WHERE id = $2 AND group_id = $1)

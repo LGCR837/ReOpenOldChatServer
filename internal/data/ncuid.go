@@ -55,14 +55,25 @@ func ensureTable(ctx context.Context, db *sqlx.DB, ddl string) {
 	}
 }
 
+// ensureColumn 补字符串列（VARCHAR(32) NOT NULL，默认空串），ncuid 系列专用。
 func ensureColumn(ctx context.Context, db *sqlx.DB, table, column, backfill string) {
+	ensureColumnDef(ctx, db, table, column, "VARCHAR(32) NOT NULL DEFAULT ''", backfill)
+}
+
+// ensureColumnDef 按给定列定义补列，供非字符串列（如 INTEGER）使用。
+// 探列与 ALTER 的失败原因都要吐日志：早前静默吞错，症状是「列莫名不存在」难排查。
+func ensureColumnDef(ctx context.Context, db *sqlx.DB, table, column, colDef, backfill string) {
 	var has bool
 	row := db.QueryRowxContext(ctx, `SELECT COUNT(1) FROM pragma_table_info(?) WHERE name = ?`, table, column)
 	if err := row.Scan(&has); err != nil {
+		log.Printf("data: probe column %s.%s failed: %v", table, column, err)
 		return
 	}
 	if !has {
-		_, _ = db.ExecContext(ctx, `ALTER TABLE `+table+` ADD COLUMN `+column+` VARCHAR(32) NOT NULL DEFAULT ''`)
+		if _, err := db.ExecContext(ctx, `ALTER TABLE `+table+` ADD COLUMN `+column+` `+colDef); err != nil {
+			log.Printf("data: add column %s.%s failed: %v", table, column, err)
+			return
+		}
 	}
 	if backfill != "" {
 		_, _ = db.ExecContext(ctx, backfill)
