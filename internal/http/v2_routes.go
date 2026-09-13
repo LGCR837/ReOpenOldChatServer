@@ -111,6 +111,11 @@ func (api *API) registerV2Routes(r chi.Router) {
 		r.Get("/me/bug-reports", api.handleMeBugReports)
 		r.Get("/me/user-reports", api.handleMeUserReports)
 		r.Post("/me/delete", api.handleDeleteAccount)
+		r.Post("/me/presence", api.handleMePresence)
+		r.Get("/me/scratch", api.handleMeScratchGet)
+		r.Post("/me/scratch", api.handleMeScratchPost)
+		r.Get("/me/group-invite-preference", api.handleMeGroupInvitePreferenceGet)
+		r.Post("/me/group-invite-preference", api.handleMeGroupInvitePreferenceSet)
 		r.Get("/users/profile", api.handleUserProfile)
 
 		// ---- 红包 ----

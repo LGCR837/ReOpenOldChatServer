@@ -245,6 +245,20 @@ CREATE TABLE IF NOT EXISTS user_daily_checkins (
     UNIQUE(user_id, checkin_date)
 )`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_user_daily_checkins_user_created ON user_daily_checkins (user_id, created_at DESC)`)
+	// 每日刮刮乐：与签到同构，UNIQUE(user_id, scratch_date) 保证每天只开一次奖
+	_, _ = db.Exec(`
+CREATE TABLE IF NOT EXISTS user_daily_scratches (
+    id VARCHAR(32) PRIMARY KEY,
+    user_id VARCHAR(32) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    scratch_date VARCHAR(16) NOT NULL,
+    slots TEXT NOT NULL DEFAULT '[]',
+    total_reward INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, scratch_date)
+)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_user_daily_scratches_user_created ON user_daily_scratches (user_id, created_at DESC)`)
+	// 群邀请偏好：置 1 表示拒绝接收他人拉群邀请
+	_ = addColumnIfMissing(db, "users", "group_invite_reject", "INTEGER NOT NULL DEFAULT 0")
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_direct_messages_created ON direct_messages (created_at)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_direct_messages_read ON direct_messages (read_at)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_group_messages_created ON group_messages (created_at)`)

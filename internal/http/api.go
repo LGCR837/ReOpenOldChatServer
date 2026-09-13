@@ -58,6 +58,7 @@ type API struct {
 	v2Nonces          *nonceCache
 	router            chi.Router
 	typing            *typingStore
+	presence          *presenceStore
 	tokenVersionMu    sync.Mutex
 	tokenVersionCache map[string]tokenVersionEntry
 }
@@ -106,6 +107,7 @@ func New(cfg config.Config, db *sqlx.DB) http.Handler {
 		ipLimiter:         ratelimit.NewLimiter(1.0, 5),
 		idLimiter:         ratelimit.NewLimiter(0.2, 3),
 		typing:            newTypingStore(),
+		presence:          newPresenceStore(),
 		tokenVersionCache: make(map[string]tokenVersionEntry),
 	}
 	setTransferRateLimits(cfg.MediaRateBytes, cfg.UpdateRateBytes, cfg.VideoRateBytes, cfg.MusicRateBytes)
